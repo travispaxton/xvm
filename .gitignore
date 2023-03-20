@@ -51,6 +51,7 @@ Thumbs.db
 ###################
 classes/
 build/
+out/
 
 # tooling and project files #
 #############################
