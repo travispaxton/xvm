@@ -500,7 +500,7 @@ tasks.register("dist-local") {
         if (xecLink.length > 0) {
             val xecFile    = Paths.get(xecLink).toRealPath()
             val libexecDir = file("$xecFile/../..")
-            var updated    = false;
+            var updated    = false
 
             val srcBin = fileTree("$binDir").getFiles().stream().
                     mapToLong({f -> f.lastModified()}).max().orElse(0)
@@ -511,7 +511,7 @@ tasks.register("dist-local") {
                     from("$binDir/")
                     into("$libexecDir/bin")
                 }
-                updated = true;
+                updated = true
             }
 
             val srcLib = fileTree("$libDir/").getFiles().stream().
@@ -523,7 +523,7 @@ tasks.register("dist-local") {
                     from("$libDir/")
                     into("$libexecDir/lib")
                 }
-                updated = true;
+                updated = true
             }
 
             val srcJts = fileTree("$javaDir/").getFiles().stream().
@@ -535,7 +535,7 @@ tasks.register("dist-local") {
                     from("$javaDir/")
                     into("$libexecDir/javatools")
                 }
-                updated = true;
+                updated = true
             }
 
             if (updated) {

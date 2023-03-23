@@ -1,5 +1,17 @@
 rootProject.name = "xvm"
 
+// Version catalog, to avoid version skew between artefacts that are used by several subprojects.
+dependencyResolutionManagement {
+    versionCatalogs {
+        create("xvmlibs") {
+            library("junit", "junit:junit:4.13.2")
+            library("javax-activation", "javax.activation:activation:1.1.1")
+            library("jakarta-xml-bind-api", "jakarta.xml.bind:jakarta.xml.bind-api:2.3.2")
+            library("jaxb-runtime", "org.glassfish.jaxb:jaxb-runtime:2.3.2")
+        }
+    }
+}
+
 include(":javatools_utils")     // produces javatools_utils.jar for org.xvm.utils package
 include(":javatools_unicode")   // produces data files -> :lib_ecstasy/resources, only on request
 include(":javatools")           // produces javatools.jar

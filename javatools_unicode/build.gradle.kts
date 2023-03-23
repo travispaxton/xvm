@@ -11,9 +11,9 @@ plugins {
 }
 
 dependencies {
-    implementation("com.sun.activation:javax.activation:1.2.0")
-    implementation("jakarta.xml.bind:jakarta.xml.bind-api:2.3.2")
-    implementation("org.glassfish.jaxb:jaxb-runtime:2.3.2")
+    implementation(xvmlibs.javax.activation)
+    implementation(xvmlibs.jakarta.xml.bind.api)
+    implementation(xvmlibs.jaxb.runtime)
     implementation("org.xtclang.xvm:javatools_utils:")
 }
 
