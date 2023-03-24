@@ -2,26 +2,160 @@
  * Main build file for the XVM project, producing the XDK.
  */
 
-import java.io.File
+import org.gradle.plugins.ide.idea.model.IdeaLanguageLevel
+import org.jetbrains.gradle.ext.ActionDelegationConfig.TestRunner
+import org.jetbrains.gradle.ext.ActionDelegationConfig.TestRunner.*
+import org.jetbrains.gradle.ext.compiler
+import org.jetbrains.gradle.ext.copyright
+import org.jetbrains.gradle.ext.delegateActions
+import org.jetbrains.gradle.ext.settings
 
 group   = "org.xvm"
 version = "0.4.3"
 
 plugins {
-    idea
+    id("org.jetbrains.gradle.plugin.idea-ext") version "1.1.7"
 }
 
-allprojects {
-    apply(plugin = "idea")
-    idea {
-        // TODO: if you want parts of paths in resulting files (*.iml, etc.) to be replaced by variables (Files)
-        //   pathVariables GRADLE_HOME: file('~/cool-software/gradle')
+/*
+Project level settings
 
-        module {
-            setOutputDir(file("build/classes/main"));
-            setTestOutputDir(file("build/classes/test"))
+compiler
+groovyCompiler
+copyright
+runConfigurations
+doNotDetectFrameworks
+taskTriggers
+delegateActions
+ideArtifacts
+encodings
+Module level settings
+
+packagePrefix
+facets
+
+// Compiler:
+if (resourcePatterns) map.put("resourcePatterns", resourcePatterns)
+if (processHeapSize != null) map.put("processHeapSize", processHeapSize)
+if (autoShowFirstErrorInEditor != null) map.put("autoShowFirstErrorInEditor", autoShowFirstErrorInEditor)
+if (displayNotificationPopup != null) map.put("displayNotificationPopup", displayNotificationPopup)
+if (clearOutputDirectory != null) map.put("clearOutputDirectory", clearOutputDirectory)
+if (addNotNullAssertions != null) map.put("addNotNullAssertions", addNotNullAssertions)
+if (enableAutomake != null) map.put("enableAutomake", enableAutomake)
+if (parallelCompilation != null) map.put("parallelCompilation", parallelCompilation)
+if (rebuildModuleOnDependencyChange != null) map.put("rebuildModuleOnDependencyChange", rebuildModuleOnDependencyChange)
+if (additionalVmOptions != null) map.put("additionalVmOptions", additionalVmOptions)
+if (useReleaseOption != null) map.put("useReleaseOption", useReleaseOption)
+if (javacConfig != null) map.put("javacOptions", javacConfig.toMap())
+
+//JavaConfiguration:
+if (preferTargetJDKCompiler != null) map.put("preferTargetJDKCompiler", preferTargetJDKCompiler)
+if (javacAdditionalOptions != null) map.put("javacAdditionalOptions", javacAdditionalOptions)
+if (moduleJavacAdditionalOptions != null) map.put("moduleJavacAdditionalOptions", moduleJavacAdditionalOptions)
+if (generateDebugInfo != null) map.put("generateDebugInfo", generateDebugInfo)
+if (generateDeprecationWarnings != null) map.put("generateDeprecationWarnings", generateDeprecationWarnings)
+if (generateNoWarnings != null) map.put("generateNoWarnings", generateNoWarnings)
+
+// Copyright:
+
+@Override
+Map<String, ?> toMap() {
+    def map = [:]
+    if (useDefault) map.put("useDefault", useDefault)
+    if (!scopes.isEmpty()) {
+        map.put("scopes", scopes)
+    }
+    if (!profiles.isEmpty()) {
+        map.put("profiles", profiles.asMap.collectEntries { k, v -> [k, v.toMap()] })
+    }
+    return map
+}
+}
+
+@CompileStatic
+class CopyrightProfile {
+
+final String name
+String notice
+String keyword
+String allowReplaceRegexp
+
+CopyrightProfile(String name) {
+this.name = name
+}
+
+def toMap() {
+return [A
+"name"              : name,
+"notice"            : notice,
+"keyword"           : keyword,
+"allowReplaceRegexp": allowReplaceRegexp
+]
+}
+
+// IDEA Ext plugin
+settingsExt.create("delegateActions", ActionDelegationConfig)
+settingsExt.create("taskTriggers", TaskTriggersConfig, project)
+settingsExt.create("compiler", IdeaCompilerConfiguration, project)
+settingsExt.create("groovyCompiler", GroovyCompilerConfiguration)
+settingsExt.create("codeStyle", CodeStyleConfig)
+settingsExt.create("copyright", CopyrightConfiguration, project)
+settingsExt.create("encodings", EncodingConfiguration, project)
+def inspections = project.container(Inspection)
+container.add("inspections", inspections)
+}
+
+static void addArtifacts(ExtensionContainer container, Project project) {
+def artifacts = project.container(TopLevelArtifact, new TopLevelArtifactFactory(project))
+container.add("ideArtifacts", artifacts)
+}
+}
+// Codestyle - use .editorconfig
+// excludes etc:
+//[{xx/x.sql,xx/x.properties,xx/File.kt}]   x to asterisks.
+// ij_formatter_enabled = false
+ */
+
+allprojects {
+
+    apply(plugin = "org.jetbrains.gradle.plugin.idea-ext")
+
+    // Plug all gradle options into our .idea/configuration + other IDEA only stuff
+    // like syntax highlighting and code style template
+    idea.project.settings {
+            copyright {
+                useDefault = "XVMDefaultCopyright"
+                profiles {
+                    //XVMDefaultCopyright {
+                    //    notice = "Copyright (C) xtclang.org, 2017-2023"
+                    //    keywords = "xtc"
+                    //}
+                }
+            }
+            delegateActions {
+                delegateBuildRunToGradle = false // This should set IDEA as the project build and run default, not Gradle, as is default when importing a Gradle project into IntelliJ.
+                testRunner = PLATFORM    // Test execution: PLATFORM, GRADLE or CHOOSE_PER_TEST
+            }
+            compiler {
+                javac {
+                    javacAdditionalOptions = "-encoding_u_t_f-8-_xdoclint-_xlint:all-_xmaxwarns1024-_xmaxerrs1024--enable-preview"
+                    processHeapSize = 1024
+//module_javac_additional_options=['some':'-aaa','some.main':'-bbb','some.test':'-ccc','some.core':'-ddd']
+                }
+            }
+
         }
     }
+
+    idea {
+        //module {
+        //    setOutputDir(file("build/classes/main"));
+        //    setTestOutputDir(file("build/classes/test"))
+        //}
+    }
+
+    //project.idea.project
+    // project.idea.module, targetVersion, workspace, t
 
     configurations.all {
         resolutionStrategy.dependencySubstitution {
@@ -40,9 +174,11 @@ allprojects {
     }
 
     tasks.withType<JavaCompile>().configureEach {
+        val compiler = javaCompiler;
+        println(compiler)
         options.encoding = "UTF-8"
         // Add -Xlint:all, to make the command line build show exactly the same warnings as the problems tab in the IDE.
-        options.compilerArgs.add("-Xlint:all")
+        options.compilerArgs.addAll(listOf("-Xlint:all", "-Xmaxwarns", "1024", "-Xmaxerrs", "1024", "--enable-preview")); //, "--add-modules", "jdk.incubator.concurrent"));
         // TODO: Work in progress. Will be completed or left out of this MR.
 //        javaCompiler.set(javaToolchains.compilerFor {
 //            languageVersion.set(JavaLanguageVersion.of(17))
