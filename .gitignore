@@ -56,6 +56,13 @@ out/
 # tooling and project files #
 #############################
 prj/
-.idea/
 .gradle/
 !gradle-wrapper.jar
+
+# Eclipse
+.settings
+.project
+.classpath
+
+# IntelliJ
+.idea/
