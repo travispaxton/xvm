@@ -18,8 +18,8 @@ class DefaultDiscoveryEngineTest {
         DefaultDiscoveryEngine engine   = new DefaultDiscoveryEngine();
         Model[]                models   = engine.discover(config);
 
-        assert:test models.size == 1;
-        assert:test models[0].children.size != 0;
+        assert models.size == 1;
+        assert models[0].children.size != 0;
     }
 
 }

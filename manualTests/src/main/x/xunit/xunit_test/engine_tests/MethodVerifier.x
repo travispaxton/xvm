@@ -46,7 +46,7 @@ class MethodVerifier {
 
     <Target> Target assertTarget(Type<Target> type) {
          Target[] targets = findTargets(type);
-         assert:test targets.size == 1;
+         assert targets.size == 1;
          return targets[0];
     }
 

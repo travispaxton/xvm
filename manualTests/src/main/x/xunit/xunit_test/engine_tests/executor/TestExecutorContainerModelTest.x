@@ -165,7 +165,7 @@ class TestExecutorContainerModelTest {
 
         void failingTest() {
             methods.called(this, failingTest);
-            assert:test;
+            assert;
         }
 
         @Disabled("should not be executed")

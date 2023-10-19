@@ -24,7 +24,7 @@ class MethodResolverTest {
         DiscoveryConfiguration config     = DiscoveryConfiguration.create();
         MethodResolver         resolver   = new MethodResolver();
 
-        assert:test (ModelBuilder[] builders, Selector[] selectors) := resolver.resolve(config, selector);
+        assert (ModelBuilder[] builders, Selector[] selectors) := resolver.resolve(config, selector);
 
     }
 

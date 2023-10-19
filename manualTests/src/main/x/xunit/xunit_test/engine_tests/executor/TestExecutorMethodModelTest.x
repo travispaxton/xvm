@@ -78,7 +78,7 @@ class TestExecutorMethodModelTest {
 
         listener.forTest(model.uniqueId).assertSuccessfulTest();
 
-        assert:test ctxFinal.testFixture.is(TestStub);
+        assert ctxFinal.testFixture.is(TestStub);
         TestStub stub = ctxFinal.testFixture.as(TestStub);
 
         stub.methods.inOrder()
@@ -103,7 +103,7 @@ class TestExecutorMethodModelTest {
 
         listener.forTest(model.uniqueId).assertSuccessfulTest();
 
-        assert:test ctxFinal.testFixture.is(TestStub);
+        assert ctxFinal.testFixture.is(TestStub);
         TestStub stub = ctxFinal.testFixture.as(TestStub);
 
         stub.methods.inOrder()
@@ -127,7 +127,7 @@ class TestExecutorMethodModelTest {
 
         listener.forTest(model.uniqueId).assertSuccessfulTest();
 
-        assert:test ctxFinal.testFixture.is(TestStub);
+        assert ctxFinal.testFixture.is(TestStub);
         TestStub stub = ctxFinal.testFixture.as(TestStub);
 
         stub.methods.inOrder()
@@ -152,7 +152,7 @@ class TestExecutorMethodModelTest {
 
         listener.forTest(model.uniqueId).assertSuccessfulTest();
 
-        assert:test ctxFinal.testFixture.is(TestStub);
+        assert ctxFinal.testFixture.is(TestStub);
         TestStub stub = ctxFinal.testFixture.as(TestStub);
 
         stub.methods.inOrder()
@@ -178,7 +178,7 @@ class TestExecutorMethodModelTest {
 
         listener.forTest(model.uniqueId).assertSuccessfulTest();
 
-        assert:test ctxFinal.testFixture.is(TestStub);
+        assert ctxFinal.testFixture.is(TestStub);
         TestStub stub = ctxFinal.testFixture.as(TestStub);
 
         stub.methods.inOrder()
@@ -204,7 +204,7 @@ class TestExecutorMethodModelTest {
 
         listener.forTest(model.uniqueId).assertSkippedTest("should not be executed");
 
-        assert:test ctxFinal.testFixture.is(TestStub);
+        assert ctxFinal.testFixture.is(TestStub);
         TestStub stub = ctxFinal.testFixture.as(TestStub);
 
         stub.methods.verifyNoMethodsCalled();
@@ -227,7 +227,7 @@ class TestExecutorMethodModelTest {
 
         listener.forTest(model.uniqueId).assertFailedTest(Assertion);
 
-        assert:test ctxFinal.testFixture.is(TestStub);
+        assert ctxFinal.testFixture.is(TestStub);
         TestStub stub = ctxFinal.testFixture.as(TestStub);
 
         stub.methods.inOrder()
@@ -261,7 +261,7 @@ class TestExecutorMethodModelTest {
 
         listener.forTest(model.uniqueId).assertSuccessfulTest();
 
-        assert:test ctxFinal.testFixture.is(OrderedTestStub);
+        assert ctxFinal.testFixture.is(OrderedTestStub);
         OrderedTestStub stub = ctxFinal.testFixture.as(OrderedTestStub);
 
         stub.methods.inOrder()
@@ -312,7 +312,7 @@ class TestExecutorMethodModelTest {
 
         void failingTest() {
             methods.called(this, failingTest);
-            assert:test;
+            assert;
         }
 
         @Disabled("should not be executed")

@@ -20,17 +20,17 @@ class PackageResolverTest {
         DiscoveryConfiguration config      = DiscoveryConfiguration.create();
         PackageResolver        resolver    = new PackageResolver();
 
-        assert:test (ModelBuilder[] builders, Selector[] selectors) := resolver.resolve(config, selector);
-        assert:test builders.size == 1;
-        assert:test builders[0].is(ContainerModel.Builder);
-        assert:test builders[0].as(ContainerModel.Builder).uniqueId == UniqueId.forObject(testPackage);
-        assert:test selectors.size == 2;
-        assert:test selectors[0].is(ClassSelector);
-        assert:test selectors[1].is(ClassSelector);
+        assert (ModelBuilder[] builders, Selector[] selectors) := resolver.resolve(config, selector);
+        assert builders.size == 1;
+        assert builders[0].is(ContainerModel.Builder);
+        assert builders[0].as(ContainerModel.Builder).uniqueId == UniqueId.forObject(testPackage);
+        assert selectors.size == 2;
+        assert selectors[0].is(ClassSelector);
+        assert selectors[1].is(ClassSelector);
 
         var names = selectors.map(s -> s.as(ClassSelector).testClass.as(Class).name);
-        assert:test names.contains("SimpleTestOne");
-        assert:test names.contains("SimpleTestTwo");
+        assert names.contains("SimpleTestOne");
+        assert names.contains("SimpleTestTwo");
     }
 
     @Test
@@ -40,17 +40,17 @@ class PackageResolverTest {
         DiscoveryConfiguration config      = DiscoveryConfiguration.create();
         PackageResolver        resolver    = new PackageResolver();
 
-        assert:test (ModelBuilder[] builders, Selector[] selectors) := resolver.resolve(config, selector);
-        assert:test builders.size == 1;
-        assert:test builders[0].is(ContainerModel.Builder);
-        assert:test builders[0].as(ContainerModel.Builder).uniqueId == UniqueId.forObject(testPackage);
-        assert:test selectors.size == 2;
-        assert:test selectors[0].is(ClassSelector);
-        assert:test selectors[1].is(ClassSelector);
+        assert (ModelBuilder[] builders, Selector[] selectors) := resolver.resolve(config, selector);
+        assert builders.size == 1;
+        assert builders[0].is(ContainerModel.Builder);
+        assert builders[0].as(ContainerModel.Builder).uniqueId == UniqueId.forObject(testPackage);
+        assert selectors.size == 2;
+        assert selectors[0].is(ClassSelector);
+        assert selectors[1].is(ClassSelector);
 
         var names = selectors.map(s -> s.as(ClassSelector).testClass.as(Class).name);
-        assert:test names.contains("SimpleTestOne");
-        assert:test names.contains("SimpleTestTwo");
+        assert names.contains("SimpleTestOne");
+        assert names.contains("SimpleTestTwo");
     }
 
     @Test
@@ -58,7 +58,7 @@ class PackageResolverTest {
         Selector               selector = new PackageSelector("not.a.package");
         DiscoveryConfiguration config   = DiscoveryConfiguration.create();
         PackageResolver        resolver = new PackageResolver();
-        assert:test resolver.resolve(config, selector) == False;
+        assert resolver.resolve(config, selector) == False;
     }
 
     @Test
@@ -66,7 +66,7 @@ class PackageResolverTest {
         Selector               selector = new ClassSelector(test_packages.SimpleTest);
         DiscoveryConfiguration config   = DiscoveryConfiguration.create();
         PackageResolver        resolver = new PackageResolver();
-        assert:test resolver.resolve(config, selector) == False;
+        assert resolver.resolve(config, selector) == False;
     }
 
     @Test
@@ -74,6 +74,6 @@ class PackageResolverTest {
         Selector               selector = new MethodSelector(test_packages.SimpleTest, test_packages.SimpleTest.testOne);
         DiscoveryConfiguration config   = DiscoveryConfiguration.create();
         PackageResolver        resolver = new PackageResolver();
-        assert:test resolver.resolve(config, selector) == False;
+        assert resolver.resolve(config, selector) == False;
     }
 }

@@ -58,7 +58,7 @@ class AssertingExecutionListener
      * @return this `AssertingExecutionListener` so that assertions can be chained
      */
     AssertingExecutionListener assertNoErrors() {
-        assert:test errors.empty;
+        assert errors.empty;
         return this;
     }
 
@@ -88,7 +88,7 @@ class AssertingExecutionListener
      * @return this `AssertingExecutionListener` so that assertions can be chained
      */
     AssertingExecutionListener assertStarted(UniqueId identifier) {
-        assert:test started.contains(identifier);
+        assert started.contains(identifier);
         return this;
     }
 
@@ -100,7 +100,7 @@ class AssertingExecutionListener
      * @return this `AssertingExecutionListener` so that assertions can be chained
      */
     AssertingExecutionListener assertNotStarted(UniqueId identifier) {
-        assert:test !started.contains(identifier);
+        assert !started.contains(identifier);
         return this;
     }
 
@@ -112,7 +112,7 @@ class AssertingExecutionListener
      * @return this `AssertingExecutionListener` so that assertions can be chained
      */
     AssertingExecutionListener assertCompleted(UniqueId identifier) {
-        assert:test completed.contains(identifier);
+        assert completed.contains(identifier);
         return this;
     }
 
@@ -124,7 +124,7 @@ class AssertingExecutionListener
      * @return this `AssertingExecutionListener` so that assertions can be chained
      */
     AssertingExecutionListener assertNotCompleted(UniqueId identifier) {
-        assert:test !completed.contains(identifier);
+        assert !completed.contains(identifier);
         return this;
     }
 
@@ -136,7 +136,7 @@ class AssertingExecutionListener
      * @return this `AssertingExecutionListener` so that assertions can be chained
      */
     AssertingExecutionListener assertSkipped(UniqueId identifier) {
-        assert:test skipped.contains(identifier);
+        assert skipped.contains(identifier);
         return this;
     }
 
@@ -150,7 +150,7 @@ class AssertingExecutionListener
      */
     AssertingExecutionListener assertSkipped(UniqueId identifier, String? expected) {
         if (String actualReason := skipped.get(identifier)) {
-            assert:test actualReason == expected;
+            assert actualReason == expected;
             return this;
         }
         throw new Assertion($"Test with identifier {identifier} was not skipped");
@@ -164,7 +164,7 @@ class AssertingExecutionListener
      * @return this `AssertingExecutionListener` so that assertions can be chained
      */
     AssertingExecutionListener assertNotSkipped(UniqueId identifier) {
-        assert:test !skipped.contains(identifier);
+        assert !skipped.contains(identifier);
         return this;
     }
 
@@ -226,9 +226,9 @@ class AssertingExecutionListener
                     .assertStarted()
                     .assertCompleted()
                     .assertResult(result -> {
-                        assert:test result.exception == Null;
-                        assert:test result.status == Successful;
-                        assert:test result.duration != Duration.None;
+                        assert result.exception == Null;
+                        assert result.status == Successful;
+                        assert result.duration != Duration.None;
                     });
         }
 
@@ -245,9 +245,9 @@ class AssertingExecutionListener
                     .assertStarted()
                     .assertCompleted()
                     .assertResult(result -> {
-                        assert:test result.status == Failed;
-                        assert:test result.exception.is(errorType);
-                        assert:test result.duration != Duration.None;
+                        assert result.status == Failed;
+                        assert result.exception.is(errorType);
+                        assert result.duration != Duration.None;
                         });
         }
 
@@ -271,7 +271,7 @@ class AssertingExecutionListener
          * @return this `TestState` so that assertions can be chained
          */
         TestState assertNoErrors() {
-            assert:test error == Null;
+            assert error == Null;
             return this;
         }
 
@@ -298,7 +298,7 @@ class AssertingExecutionListener
          * @return this `TestState` so that assertions can be chained
          */
         TestState assertStarted() {
-            assert:test started;
+            assert started;
             return this;
         }
 
@@ -308,7 +308,7 @@ class AssertingExecutionListener
          * @return this `TestState` so that assertions can be chained
          */
         TestState assertNotStarted() {
-            assert:test !started;
+            assert !started;
             return this;
         }
 
@@ -318,7 +318,7 @@ class AssertingExecutionListener
          * @return this `TestState` so that assertions can be chained
          */
         TestState assertCompleted() {
-            assert:test result != Null;
+            assert result != Null;
             return this;
         }
 
@@ -328,7 +328,7 @@ class AssertingExecutionListener
          * @return this `TestState` so that assertions can be chained
          */
         TestState assertNotCompleted() {
-            assert:test result == Null;
+            assert result == Null;
             return this;
         }
 
@@ -338,7 +338,7 @@ class AssertingExecutionListener
          * @return this `TestState` so that assertions can be chained
          */
         TestState assertSkipped() {
-            assert:test skippedReason != Null;
+            assert skippedReason != Null;
             return this;
         }
 
@@ -359,7 +359,7 @@ class AssertingExecutionListener
          * @return this `TestState` so that assertions can be chained
          */
         TestState assertSkipped(String? reason) {
-            assert:test skippedReason == reason;
+            assert skippedReason == reason;
             return this;
         }
 	}

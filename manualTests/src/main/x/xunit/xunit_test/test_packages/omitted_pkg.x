@@ -7,7 +7,7 @@ package omitted_pkg {
     class SomeTests {
         @Test(Test.Omit)
         void shouldNotBeExecuted() {
-            assert:test;
+            assert;
         }
 
         void noTest() {

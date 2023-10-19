@@ -9,7 +9,7 @@ class ExtensionRegistryTest {
     @Test
     void shouldBeEmpty() {
         ExtensionRegistry registry = new ExtensionRegistry();
-        assert:test registry.size == 0;
+        assert registry.size == 0;
     }
 
     @Test
@@ -17,7 +17,7 @@ class ExtensionRegistryTest {
         ExtensionRegistry registry = new ExtensionRegistry();
         registry.add(ExtensionStubOne);
         registry.add(ExtensionStubTwo);
-        assert:test registry.size == 2;
+        assert registry.size == 2;
     }
 
     @Test
@@ -27,7 +27,7 @@ class ExtensionRegistryTest {
         registry.add(ExtensionStubTwo);
 
         ExtensionStubOne[] extensions = registry.get(ExtensionStubOne);
-        assert:test extensions.size == 1;
+        assert extensions.size == 1;
     }
 
     @Test
@@ -38,9 +38,9 @@ class ExtensionRegistryTest {
         registry.add(ExtensionStubTwo);
 
         ExtensionStubOne[] extensions = registry.get(ExtensionStubOne);
-        assert:test extensions.size == 2;
-        assert:test extensions.any(e -> e.is(ExtensionStubOneSubOne));
-        assert:test extensions.any(e -> e.is(ExtensionStubOneSubTwo));
+        assert extensions.size == 2;
+        assert extensions.any(e -> e.is(ExtensionStubOneSubOne));
+        assert extensions.any(e -> e.is(ExtensionStubOneSubTwo));
     }
 
     @Test
@@ -53,11 +53,11 @@ class ExtensionRegistryTest {
         registry.add(ExtensionStubTwo);
 
         PriorityExtension[] extensions = registry.get(PriorityExtension);
-        assert:test extensions.size == 4;
-        assert:test extensions[0].is(PriorityExtensionStubOne);
-        assert:test extensions[1].is(PriorityExtensionStubThree);
-        assert:test extensions[2].is(PriorityExtensionStubTwo);
-        assert:test extensions[3].is(PriorityExtensionDefault);
+        assert extensions.size == 4;
+        assert extensions[0].is(PriorityExtensionStubOne);
+        assert extensions[1].is(PriorityExtensionStubThree);
+        assert extensions[2].is(PriorityExtensionStubTwo);
+        assert extensions[3].is(PriorityExtensionDefault);
     }
 
     @Test
@@ -69,7 +69,7 @@ class ExtensionRegistryTest {
         parent.add(ExtensionStubTwo);
 
         ExtensionStubOne[] extensions = registry.get(ExtensionStubOne);
-        assert:test extensions.size == 1;
+        assert extensions.size == 1;
     }
 
     @Test
@@ -83,7 +83,7 @@ class ExtensionRegistryTest {
         grandParent.add(ExtensionStubTwo);
 
         ExtensionStubOne[] extensions = registry.get(ExtensionStubOne);
-        assert:test extensions.size == 1;
+        assert extensions.size == 1;
     }
 
 

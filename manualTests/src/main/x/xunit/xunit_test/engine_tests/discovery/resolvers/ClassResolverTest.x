@@ -21,19 +21,19 @@ class ClassResolverTest {
         DiscoveryConfiguration config   = DiscoveryConfiguration.create();
         ClassResolver          resolver = new ClassResolver();
 
-        assert:test (ModelBuilder[] builders, Selector[] selectors) := resolver.resolve(config, selector);
-        assert:test builders.size == 1;
-        assert:test builders[0].is(ContainerModel.Builder);
-        assert:test builders[0].as(ContainerModel.Builder).uniqueId == UniqueId.forClass(clz);
-        assert:test selectors.size == 2;
-        assert:test selectors[0].is(MethodSelector);
-        assert:test selectors[0].as(MethodSelector).testClass == clz;
-        assert:test selectors[1].is(MethodSelector);
-        assert:test selectors[1].as(MethodSelector).testClass == clz;
+        assert (ModelBuilder[] builders, Selector[] selectors) := resolver.resolve(config, selector);
+        assert builders.size == 1;
+        assert builders[0].is(ContainerModel.Builder);
+        assert builders[0].as(ContainerModel.Builder).uniqueId == UniqueId.forClass(clz);
+        assert selectors.size == 2;
+        assert selectors[0].is(MethodSelector);
+        assert selectors[0].as(MethodSelector).testClass == clz;
+        assert selectors[1].is(MethodSelector);
+        assert selectors[1].as(MethodSelector).testClass == clz;
 
         var names = selectors.map(s -> s.as(MethodSelector).testMethod.as(MethodOrFunction).name);
-        assert:test names.contains("testOne");
-        assert:test names.contains("testTwo");
+        assert names.contains("testOne");
+        assert names.contains("testTwo");
     }
 
     @Test
@@ -44,19 +44,19 @@ class ClassResolverTest {
         DiscoveryConfiguration config   = DiscoveryConfiguration.create();
         ClassResolver          resolver = new ClassResolver();
 
-        assert:test (ModelBuilder[] builders, Selector[] selectors) := resolver.resolve(config, selector);
-        assert:test builders.size == 1;
-        assert:test builders[0].is(ContainerModel.Builder);
-        assert:test builders[0].as(ContainerModel.Builder).uniqueId == UniqueId.forClass(clz);
-        assert:test selectors.size == 2;
-        assert:test selectors[0].is(MethodSelector);
-        assert:test selectors[0].as(MethodSelector).testClass == clz;
-        assert:test selectors[1].is(MethodSelector);
-        assert:test selectors[1].as(MethodSelector).testClass == clz;
+        assert (ModelBuilder[] builders, Selector[] selectors) := resolver.resolve(config, selector);
+        assert builders.size == 1;
+        assert builders[0].is(ContainerModel.Builder);
+        assert builders[0].as(ContainerModel.Builder).uniqueId == UniqueId.forClass(clz);
+        assert selectors.size == 2;
+        assert selectors[0].is(MethodSelector);
+        assert selectors[0].as(MethodSelector).testClass == clz;
+        assert selectors[1].is(MethodSelector);
+        assert selectors[1].as(MethodSelector).testClass == clz;
 
         var names = selectors.map(s -> s.as(MethodSelector).testMethod.as(MethodOrFunction).name);
-        assert:test names.contains("testOne");
-        assert:test names.contains("testTwo");
+        assert names.contains("testOne");
+        assert names.contains("testTwo");
     }
 
     @Test
@@ -64,7 +64,7 @@ class ClassResolverTest {
         Selector               selector = new ClassSelector("bad.TestClass");
         DiscoveryConfiguration config   = DiscoveryConfiguration.create();
         ClassResolver          resolver = new ClassResolver();
-        assert:test resolver.resolve(config, selector) == False;
+        assert resolver.resolve(config, selector) == False;
     }
 
     @Test
@@ -72,7 +72,7 @@ class ClassResolverTest {
         Selector               selector = new PackageSelector(test_packages);
         DiscoveryConfiguration config   = DiscoveryConfiguration.create();
         ClassResolver          resolver = new ClassResolver();
-        assert:test resolver.resolve(config, selector) == False;
+        assert resolver.resolve(config, selector) == False;
     }
 
     @Test
@@ -80,7 +80,7 @@ class ClassResolverTest {
         Selector               selector = new MethodSelector(SimpleTest, SimpleTest.testOne);
         DiscoveryConfiguration config   = DiscoveryConfiguration.create();
         ClassResolver          resolver = new ClassResolver();
-        assert:test resolver.resolve(config, selector) == False;
+        assert resolver.resolve(config, selector) == False;
     }
 
     @MockTest

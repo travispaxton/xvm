@@ -23,9 +23,9 @@ class MethodExecutorTest {
         EngineExecutionContext ctx      = EngineExecutionContext.create(model);
         MethodExecutor         executor = new MethodExecutor();
         Tuple                  result   = executor.invoke(fn, ctx);
-        assert:test result.size == 1;
-        assert:test result[0].is(Int);
-        assert:test result[0].as(Int) == 19;
+        assert result.size == 1;
+        assert result[0].is(Int);
+        assert result[0].as(Int) == 19;
     }
 
     @Test
@@ -40,9 +40,9 @@ class MethodExecutorTest {
 
         MethodExecutor executor = new MethodExecutor();
         Tuple                 result   = executor.invoke(fn, ctx);
-        assert:test result.size == 1;
-        assert:test result[0].is(String);
-        assert:test result[0].as(String) == "FooBar";
+        assert result.size == 1;
+        assert result[0].is(String);
+        assert result[0].as(String) == "FooBar";
     }
 
     static const ModelStub()

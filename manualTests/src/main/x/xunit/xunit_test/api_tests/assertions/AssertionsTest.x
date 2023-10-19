@@ -9,8 +9,8 @@ class AssertionsTest {
             throw new ExceptionOne("test...");
         });
 
-        assert:test ex.message == "test...";
-        assert:test ex.cause == Null;
+        assert ex.message == "test...";
+        assert ex.cause == Null;
     }
 
     @Test
@@ -24,10 +24,10 @@ class AssertionsTest {
             thrown = e;
         }
 
-        assert:test thrown != Null;
-        assert:test thrown.is(Assertion);
-        assert:test thrown.as(Assertion).message.startsWith("expected api_tests.assertions.AssertionsTest.ExceptionOne to be thrown but was xunit_test:api_tests.assertions.AssertionsTest.ExceptionTwo: test...\n");
-        assert:test thrown.as(Assertion).cause == Null;
+        assert thrown != Null;
+        assert thrown.is(Assertion);
+        assert thrown.as(Assertion).message.startsWith("expected api_tests.assertions.AssertionsTest.ExceptionOne to be thrown but was xunit_test:api_tests.assertions.AssertionsTest.ExceptionTwo: test...\n");
+        assert thrown.as(Assertion).cause == Null;
     }
 
 
@@ -42,10 +42,10 @@ class AssertionsTest {
             thrown = e;
         }
 
-        assert:test thrown != Null;
-        assert:test thrown.is(Assertion);
-        assert:test thrown.as(Assertion).message == "expected api_tests.assertions.AssertionsTest.ExceptionOne to be thrown";
-        assert:test thrown.as(Assertion).cause == Null;
+        assert thrown != Null;
+        assert thrown.is(Assertion);
+        assert thrown.as(Assertion).message == "expected api_tests.assertions.AssertionsTest.ExceptionOne to be thrown";
+        assert thrown.as(Assertion).cause == Null;
     }
 
     static const ExceptionOne(String? text = Null, Exception? cause = Null)
