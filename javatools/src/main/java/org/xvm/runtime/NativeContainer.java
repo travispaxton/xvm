@@ -15,10 +15,13 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
 
 import java.util.concurrent.ConcurrentHashMap;
 
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 
 import java.util.jar.JarFile;
@@ -45,6 +48,7 @@ import org.xvm.asm.constants.TypeConstant;
 
 import org.xvm.runtime.ObjectHandle.DeferredCallHandle;
 
+import org.xvm.runtime.template._native.config.xRTConfig;
 import org.xvm.runtime.template.xBoolean;
 import org.xvm.runtime.template.xConst;
 import org.xvm.runtime.template.xEnum;
@@ -417,6 +421,11 @@ public class NativeContainer
         // +++ xvmProperties
         TypeConstant typeProps = pool.ensureMapType(pool.typeString(), pool.typeString());
         addResourceSupplier(new InjectionKey("properties", typeProps), this::ensureProperties);
+
+        // +++ config.Config
+        TypeConstant typeConfig = pool.ensureTerminalTypeConstant(
+                pool.ensureClassConstant(pool.ensureModuleConstant("config.xtclang.org"), "Config"));
+        addResourceSupplier(new InjectionKey("config" , typeConfig), this::ensureConfig);
         }
 
     /**
@@ -761,6 +770,38 @@ public class NativeContainer
         return hNetwork;
         }
 
+    protected ObjectHandle ensureConfig(Frame frame, ObjectHandle hOpts)
+        {
+        ObjectHandle hConfig = m_hConfig;
+        if (hConfig == null)
+            {
+            // config is created once under a lock
+            m_fConfigLock.lock();
+            try
+                {
+                // ToDo: Here we are creating config from environment variables and system properties.
+                // This is just temporary, because we probably do not want to expose these for real,
+                // as the whole point is that the application is isolated from things like knowing
+                // about the O/S etc.
+                // Eventually there will be a way to set the config sources for the container, which would
+                // typically be some sort of config file, or some config entered via the Platform, etc.
+                Map<String, Object> map    = new HashMap<>(System.getenv());
+                Properties          props  = System.getProperties();
+
+                for (String sName : props.stringPropertyNames())
+                    {
+                    map.put(sName, props.getProperty(sName));
+                    }
+
+                hConfig = m_hConfig = xRTConfig.INSTANCE.ensureConfig(frame, hOpts, map);
+                }
+            finally
+                {
+                m_fConfigLock.unlock();
+                }
+            }
+        return hConfig;
+        }
 
     // ----- Container methods ---------------------------------------------------------------------
 
@@ -836,6 +877,7 @@ public class NativeContainer
 
         // TODO CP/GG: that needs to be reworked (for now the order is critical)
         fileApp.merge(m_moduleTurtle, false, false);
+        fileApp.merge(f_repository.loadModule("config.xtclang.org"), true, false);
         fileApp.merge(f_repository.loadModule("crypto.xtclang.org"), true, false);
         fileApp.merge(f_repository.loadModule("net.xtclang.org"), true, false);
         fileApp.merge(f_repository.loadModule("web.xtclang.org"), true, false);
@@ -1002,4 +1044,11 @@ public class NativeContainer
      * Map of resources that are injectable from this container, keyed by their InjectionKey.
      */
     private final Map<InjectionKey, InjectionSupplier> f_mapResources = new HashMap<>();
+
+    /**
+     * The handle to the configuration service.
+     */
+    private ObjectHandle m_hConfig;
+
+    private final Lock m_fConfigLock = new ReentrantLock();
     }
