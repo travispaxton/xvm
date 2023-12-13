@@ -793,12 +793,18 @@ public class NativeContainer
                     map.put(sName, props.getProperty(sName));
                     }
 
-                hConfig = m_hConfig = xRTConfig.INSTANCE.ensureConfig(frame, hOpts, map);
+                hConfig = m_hConfig = xRTConfig.INSTANCE.ensureConfig(frame, map);
                 }
             finally
                 {
                 m_fConfigLock.unlock();
                 }
+            }
+
+        if (hOpts.getType().equals(frame.poolContext().typeString()))
+            {
+            // Injection of a specific ConfigKey has been requested
+            return xRTConfig.INSTANCE.ensureConfig(frame, hConfig, hOpts);
             }
         return hConfig;
         }
