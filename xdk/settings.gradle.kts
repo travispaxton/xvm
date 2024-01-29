@@ -21,6 +21,7 @@ listOfNotNull(
     "lib_ecstasy",
     "lib_collections",
     "lib_aggregate",
+    "lib_config",
     "lib_crypto",
     "lib_net",
     "lib_json",
