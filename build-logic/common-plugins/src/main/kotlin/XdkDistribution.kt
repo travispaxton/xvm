@@ -1,4 +1,3 @@
-import XdkBuildLogic.Companion.getDateTimeStampWithTz
 import org.gradle.api.Project
 import org.gradle.api.file.Directory
 import org.gradle.api.file.RegularFile
@@ -12,13 +11,41 @@ class XdkDistribution(project: Project): XdkProjectBuildLogic(project) {
 
         private const val BUILD_NUMBER = "BUILD_NUMBER"
         private const val CI = "CI"
-        private const val LOCALDIST_BACKUP_DIR = "localdist-backup"
+        private const val OS_MAC = "macosx"
+        private const val OS_WINDOWS = "windows"
+        private const val OS_LINUX = "linux"
 
         private val currentOs = OperatingSystem.current()
         private val isCiEnabled = System.getenv(CI) == "true"
 
         val distributionTasks = listOfNotNull("distTar", "distZip", "distExe")
-    }
+        val supportedOsNames = listOfNotNull(OS_MAC, OS_LINUX, OS_WINDOWS)
+        val launcherSymlinkNames = listOfNotNull("xcc", "xec", "xtc")
+
+        fun resolveLauncherFile(localDistDir: Provider<Directory>, osName: String = getCurrentOsName()): RegularFile {
+            return localDistDir.get().file("libexec/bin/${getLauncherFileName(osName)}")
+        }
+
+        fun getCurrentOsName(): String {
+            if (currentOs.isMacOsX) {
+                return OS_MAC
+            } else if (currentOs.isLinux) {
+                return OS_LINUX
+            } else if (currentOs.isWindows) {
+                return OS_WINDOWS
+            }
+            throw UnsupportedOperationException("Unknown OS: $currentOs")
+        }
+
+        private fun getLauncherFileName(osName: String = getCurrentOsName()): String {
+            return when (osName) {
+                OS_MAC -> "macos_launcher"
+                OS_LINUX -> "linux_launcher"
+                OS_WINDOWS -> "windows_launcher.exe"
+                else -> throw UnsupportedOperationException("Unknown OS: $osName ($currentOs)")
+            }
+        }
+     }
 
     init {
         logger.info("""
@@ -45,19 +72,6 @@ class XdkDistribution(project: Project): XdkProjectBuildLogic(project) {
             }
             append("-ci-$buildNumber+$gitCommitHash")
         }
-    }
-
-    fun resolveLauncherFile(localDistDir: Provider<Directory>): RegularFile {
-        val launcher = if (currentOs.isMacOsX) {
-            "macos_launcher"
-        } else if (currentOs.isLinux) {
-            "linux_launcher"
-        } else if (currentOs.isWindows) {
-            "windows_launcher.exe"
-        } else {
-            throw UnsupportedOperationException("Cannot build distribution for currentOs: $currentOs")
-        }
-        return localDistDir.get().file("libexec/bin/$launcher")
     }
 
     fun shouldCreateWindowsDistribution(): Boolean {

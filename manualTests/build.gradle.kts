@@ -136,8 +136,8 @@ xtcRun {
     showVersion = false
 
     /*
- * Run the XTC command in its built-in verbose mode (default: false).
- */
+     * Run the XTC command in its built-in verbose mode (default: false).
+     */
     verbose = true
 
     /*

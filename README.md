@@ -458,13 +458,10 @@ very latest version by invoking:
 ./gradlew installLocalDist
 ```
 
-This copies the build from the xvm directory into, by default your build/xdk dierctory. You can change this
-to write directly to the brew cellar, or other local installation, or just make sure that the launchers
+This copies the build from the xvm directory into, by default your build/dist directory. You can change 
+this  to write directly to the brew cellar, or other local installation, or just make sure that the launchers
 created by this task under your project build/xdk/bin/ are in the system PATH.
 
-*Note*: this would be done after installing the XDK via `brew`, or through any other installation
-utility, depending on your platform. This will overwrite several libraries and files in any
-local installation.
 
 For more information about the XTC DSL, please see the README.md file in the "plugin" project.
 

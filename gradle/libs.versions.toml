@@ -43,6 +43,7 @@ gradle-portal-publish = { id = "com.gradle.plugin-publish", version.ref = "gradl
 gradle-nexus-publish = { id = "io.github.gradle-nexus.publish-plugin", version.ref = "gradle-nexus-publish" }
 # TODO: Enable GitHub releases, and this seems to be both the most popular plugin and the one closest to the right version / process semantics.
 gradle-release = { id = "net.researchgate.gradle-release", version.ref = "gradle-release" }
+jreleaser = { id = "org.jreleaser", version = "1.10.0" }
 
 [libraries]
 xdk = { group = "org.xtclang", name = "xdk", version.ref = "xdk" }

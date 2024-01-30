@@ -1,5 +1,7 @@
 import XdkBuildLogic.Companion.XDK_ARTIFACT_NAME_DISTRIBUTION_ARCHIVE
 import XdkDistribution.Companion.DISTRIBUTION_TASK_GROUP
+import XdkDistribution.Companion.getCurrentOsName
+import XdkDistribution.Companion.supportedOsNames
 import org.gradle.api.attributes.Category.CATEGORY_ATTRIBUTE
 import org.gradle.api.attributes.Category.LIBRARY
 import org.gradle.api.attributes.LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE
@@ -8,7 +10,7 @@ import org.gradle.language.base.plugins.LifecycleBasePlugin.BUILD_GROUP
 import org.xtclang.plugin.tasks.XtcCompileTask
 import java.io.ByteArrayOutputStream
 import java.nio.file.Files
-import java.nio.file.attribute.FileAttribute
+import java.util.*
 
 /**
  * XDK root project, collecting the lib_* xdk builds as includes, not includedBuilds ATM,
@@ -20,6 +22,7 @@ plugins {
     alias(libs.plugins.xtc)
     alias(libs.plugins.tasktree)
     alias(libs.plugins.versions)
+    alias(libs.plugins.jreleaser)
     distribution // TODO: Create our own XDK distribution plugin, or put it in the XTC plugin
 }
 
@@ -210,8 +213,6 @@ val distTar by tasks.existing(Tar::class) {
     archiveExtension = "tar.gz"
 }
 
-val distZip by tasks.existing(Zip::class)
-
 val assembleDist by tasks.existing {
     if (xdkDist.shouldCreateWindowsDistribution()) {
         logger.warn("$prefix Task '$name' is configured to build a Windows installer. Environment needs '${XdkDistribution.MAKENSIS}' and the EnVar plugin.")
@@ -271,7 +272,6 @@ val distExe by tasks.registering {
     }
 }
 
-
 val test by tasks.existing {
     val sanityCheckRuntime = getXdkPropertyBoolean("org.xtclang.build.sanityCheckRuntime", false)
     if (sanityCheckRuntime) {
@@ -285,7 +285,7 @@ val test by tasks.existing {
  */
 val installDist by tasks.existing {
     doLast {
-        logger.info("$prefix '$name' Installed distribution to '${project.layout.buildDirectory.get()}/install/' directory.")
+        logger.info("$prefix '$name' Installed distribution to '${layout.buildDirectory.get()}/install/' directory.")
         logger.info("$prefix Installation files:")
         printTaskOutputs(INFO)
     }
@@ -301,31 +301,53 @@ val installDist by tasks.existing {
  *   solution.
  */
 val installLocalDist by tasks.registering {
+    val osName = getCurrentOsName()
+    val taskName = getTaskNameInstallLocalDist(osName)
     group = DISTRIBUTION_TASK_GROUP
-    description = "Creates an XDK installation in root/build/dist, for the current platform."
+    description = "Installs an XDK distribution in $compositeRootProjectDirectory/build/dist, for the current platform ($osName)"
+    logger.lifecycle("$prefix Created installLocalDist task for $osName, depends on $taskName.")
+    dependsOn(taskName)
+}
 
-    val localDistDir = compositeRootBuildDirectory.dir("dist")
-
-    dependsOn(installDist)
-    inputs.files(installDist)
-    outputs.dir(localDistDir)
-
-    doLast {
-        // Sync, not copy, so we can do this declaratively, Gradle input/output style, without horrible file system logic.
-        sync {
-            from(project.layout.buildDirectory.dir("install/xdk"))
-            into(localDistDir)
-        }
-
-        // Create symlinks for launcher.
-        val binDir = mkdir(localDistDir.get().dir("bin"))
-        val launcherExe = xdkDist.resolveLauncherFile(localDistDir)
-
-        // TODO: The launchers should just be application plugin scripts, this is kind of ridiculous.
-        listOf("xcc", "xec", "xtc").forEach {
-            val symLink = File(binDir, it)
-            logger.info("$prefix Creating symlink for launcher '$it' -> '${launcherExe.asFile}' (on Windows, this may require developer mode settings).")
-            Files.createSymbolicLink(symLink.toPath(), launcherExe.asFile.toPath())
+private val installLocalDistPds = supportedOsNames.map { osName ->
+    val taskName = getTaskNameInstallLocalDist(osName)
+    logger.lifecycle("$prefix Creating installation task for $osName: $taskName.")
+    tasks.register(taskName) {
+        group = DISTRIBUTION_TASK_GROUP
+        description = "Installs an XDK distribution in $compositeRootProjectDirectory/build/dist, for $osName."
+        val localDistDir = compositeRootBuildDirectory.dir("dist/$osName")
+        dependsOn(installDist)
+        inputs.files(installDist)
+        outputs.dir(localDistDir)
+        doLast {
+            sync { // Sync, not copy, so we can do this declaratively, Gradle input/output style, without horrible file system logic.
+                from(layout.buildDirectory.dir("install/xdk/"))
+                into(localDistDir)
+            }
+            val binDir = mkdir(localDistDir.get().dir("bin"))
+            val launcherExe = XdkDistribution.resolveLauncherFile(localDistDir, osName)
+            XdkDistribution.launcherSymlinkNames.forEach {
+                val symLink = File(binDir, it)
+                Files.createSymbolicLink(symLink.toPath(), launcherExe.asFile.toPath())
+                logger.info("$prefix Created symlink for launcher '$it' -> '${launcherExe.asFile}' (on Windows, this may require developer mode settings).")
+            }
         }
     }
+}.toList()
+
+val installAllLocalDists by tasks.registering {
+    group = DISTRIBUTION_TASK_GROUP
+    description = "Installs all supported platform XDK distributions in $compositeRootProjectDirectory/build/dist, for $supportedOsNames."
+    installLocalDistPds.forEach {
+        dependsOn(it)
+        logger.lifecycle("$prefix Added dependency $name <- ${it.name}")
+    }
+}
+
+private fun String.capitalizeOs(): String {
+    return this.replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() }
+}
+
+private fun getTaskNameInstallLocalDist(osName: String): String {
+    return "installLocalDist${osName.capitalizeOs()}"
 }

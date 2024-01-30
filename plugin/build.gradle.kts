@@ -31,10 +31,6 @@ val xdkJavaToolsJarConsumer by configurations.registering {
     attributes {
         attribute(Category.CATEGORY_ATTRIBUTE, objects.named(Category.LIBRARY))
         attribute(LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE, objects.named(XDK_ARTIFACT_NAME_JAVATOOLS_FATJAR))
-        //        attribute(CATEGORY_ATTRIBUTE, objects.named(Category.LIBRARY))
-        //        attribute(LIBRARY_ELEMENTS_ATTRIBUTE, objects.named(XDK_ARTIFACT_NAME_JAVATOOLS_FATJAR))
-        //        attribute(Category.CATEGORY_ATTRIBUTE, objects.named(JAVA_RUNTIME))
-        //        attribute(LIBRARY_ELEMENTS_ATTRIBUTE, objects.named(XDK_ARTIFACT_NAME_JAVATOOLS_FATJAR))
     }
 }
 
