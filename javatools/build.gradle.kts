@@ -113,7 +113,7 @@ val sanityCheckJar by tasks.registering {
     val expectedEntryCount = getXdkPropertyInt("org.xtclang.javatools.sanityCheckJar.expectedFileCount", -1)
     inputs.properties("sanityCheckJarBoolean" to checkJar, "sanityCheckJarEntryCount" to expectedEntryCount)
     inputs.files(jar)
-    outputs.files(jar)
+    outputs.files()
 
     logger.info("$prefix Configuring sanityCheckJar task (enabled: $checkJar, expected entry count: $expectedEntryCount)")
 

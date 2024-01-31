@@ -309,7 +309,7 @@ val installLocalDist by tasks.registering {
     val taskName = getTaskNameInstallLocalDist(osName)
     group = DISTRIBUTION_TASK_GROUP
     description = "Installs an XDK distribution in $compositeRootProjectDirectory/build/dist, for the current platform ($osName)"
-    logger.lifecycle("$prefix Created installLocalDist task for $osName, depends on $taskName.")
+    logger.info("$prefix Created installLocalDist task for $osName, depends on $taskName.")
     dependsOn(taskName)
     doLast {
         val binDir = "${xdkDist.getLocalDistDir().get().asFile.absolutePath}/bin"
@@ -320,14 +320,17 @@ val installLocalDist by tasks.registering {
 
 private val installLocalDistPds = supportedOsNames.map { osName ->
     val taskName = getTaskNameInstallLocalDist(osName)
-    logger.lifecycle("$prefix Creating installation task for $osName: $taskName.")
+    logger.info("$prefix Creating installation task for $osName: $taskName.")
+
     tasks.register(taskName) {
         group = DISTRIBUTION_TASK_GROUP
         description = "Installs an XDK distribution in $compositeRootProjectDirectory/build/dist, for $osName."
+
         val localDistDir = compositeRootBuildDirectory.dir("dist/$osName")
         dependsOn(installDist)
         inputs.files(installDist)
         outputs.dir(localDistDir)
+
         doLast {
             sync { // Sync, not copy, so we can do this declaratively, Gradle input/output style, without horrible file system logic.
                 from(layout.buildDirectory.dir("install/xdk/"))
