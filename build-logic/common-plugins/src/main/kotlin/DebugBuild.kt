@@ -192,6 +192,8 @@ class DebugBuild(project: Project) : XdkProjectBuildLogic(project) {
             val jar = project.tasks.getByName("jar").outputs.files.singleFile
             val contents = jarContents(jar)
 
+            project.logger.lifecycle("${project.prefix} Sanity checking jar file: '${jar.absolutePath}' (with timestamp: ${XdkBuildLogic.getDateTimeStampWithTz(jar)}).")
+
             // TODO: Very hacky sanity check verification. Need to keep this updated or remove it when we are confident artifact creation is race free
             if (size >= 0 && contents.size != size) {
                 throw project.buildException("ERROR: Expected '$jar' to contain $size entries (was: ${contents.size})")

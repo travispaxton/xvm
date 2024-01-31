@@ -20,8 +20,10 @@ dependencies {
     implementation(libs.javatools.utils)
 }
 
+val rebuildUnicode = getXdkPropertyBoolean("org.xtclang.unicode.rebuild", false)
 val unicodeUcdUrl = "https://unicode.org/Public/UCD/latest/ucdxml/ucd.all.flat.zip"
-val processedResourcesDir = tasks.processResources.get().outputs.files.singleFile
+//val processedResourcesDir = tasks.processResources.get().outputs.files.singleFile
+// processResources.outputs.upToDateWhen{ false }
 
 /**
  * Type safe "jar" task accessor.
@@ -65,11 +67,10 @@ val rebuildUnicodeTables by tasks.registering {
     group = BUILD_GROUP
     description = "If the unicode files should be regenerated, generate them from the build tool, and place them under the build resources."
 
-    val rebuildUnicode = getXdkPropertyBoolean("org.xtclang.unicode.rebuild", false)
     logger.info("$prefix Should rebuild unicode: $rebuildUnicode")
 
     dependsOn(jar)
-    outputs.dir(processedResourcesDir)
+    //outputs.dir(processedResourcesDir)
 
     if (rebuildUnicode) {
         dependsOn(downloadUcdFlatZip)
@@ -82,7 +83,7 @@ val rebuildUnicodeTables by tasks.registering {
                 mainClass = "org.xvm.tool.BuildUnicodeTables"
                 classpath(configurations.runtimeClasspath)
                 classpath(unicodeJar)
-                args(localUcdZip.absolutePath, File(processedResourcesDir, "ecstasy/text"))
+                //args(localUcdZip.absolutePath, File(processedResourcesDir, "ecstasy/text"))
             }
         }
     }

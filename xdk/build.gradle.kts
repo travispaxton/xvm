@@ -118,10 +118,6 @@ publishing {
     }
 }
 
-private fun shouldPublishPluginToLocalDist(): Boolean {
-    return project.getXdkPropertyBoolean("org.xtclang.publish.localDist", false)
-}
-
 val publishPluginToLocalDist by tasks.registering {
     group = BUILD_GROUP
     // TODO: includeBuild dependency; Slightly hacky - use a configuration from the plugin project instead.
@@ -355,6 +351,10 @@ val installAllLocalDists by tasks.registering {
         dependsOn(it)
         logger.lifecycle("$prefix Added dependency $name <- ${it.name}")
     }
+}
+
+private fun shouldPublishPluginToLocalDist(): Boolean {
+    return project.getXdkPropertyBoolean("org.xtclang.publish.localDist", false)
 }
 
 private fun String.capitalizeOs(): String {

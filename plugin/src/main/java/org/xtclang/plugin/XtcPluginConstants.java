@@ -20,6 +20,7 @@ public final class XtcPluginConstants {
     public static final String XTC_CONFIG_NAME_OUTGOING_TEST = XTC_CONFIG_NAME_OUTGOING + "Test";
 
     // XTC Compile time constants
+    public static final String XDK_BUILD_OUTPUT_DIR = "xtc/xdk/lib";
     public static final String XTC_EXTENSION_NAME_COMPILER = "xtcCompile";
     public static final String XTC_COMPILER_CLASS_NAME = "org.xvm.tool.Compiler";
     public static final String XTC_COMPILER_LAUNCHER_NAME = "xcc";
@@ -65,6 +66,8 @@ public final class XtcPluginConstants {
     // JavaTools (launcher native code)
     public static final String JAR_MANIFEST_PATH = "META-INF/MANIFEST.MF";
     public static final String JAVATOOLS_JAR_NAME = "javatools.jar";
+
+    public static final String FS = File.separator;
 
     // XTC Magic Number, for future verification of XTC module binaries, and for parts of language server support.
     @SuppressWarnings("unused")

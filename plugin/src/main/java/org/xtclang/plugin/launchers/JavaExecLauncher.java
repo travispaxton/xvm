@@ -12,6 +12,7 @@ import java.io.IOException;
 import java.util.zip.ZipFile;
 
 import static org.xtclang.plugin.XtcPluginConstants.JAR_MANIFEST_PATH;
+import static org.xtclang.plugin.XtcPluginConstants.JAVATOOLS_JAR_NAME;
 import static org.xtclang.plugin.XtcPluginConstants.XDK_CONFIG_NAME_JAVATOOLS_INCOMING;
 import static org.xtclang.plugin.XtcPluginUtils.FileUtils.readXdkVersionFromJar;
 
@@ -30,17 +31,7 @@ public class JavaExecLauncher<E extends XtcLauncherTaskExtension, T extends XtcL
     @Override
     public ExecResult apply(final CommandLine cmd) {
         logger.info("{} Launching task: {}}", prefix, this);
-
-        final var javaToolsJar = resolveJavaTools();
-        if (javaToolsJar == null) {
-            throw buildException("Failed to resolve 'javatools.jar' in any classpath.");
-        }
-
-        logger.info("{} {} (launcher: {}); Using 'javatools.jar' in classpath from: {}", prefix, cmd.getIdentifier(), cmd.getClass(), javaToolsJar);
-        if (hasVerboseLogging()) {
-            logger.lifecycle("{} JavaExec command (launcher {}): {}", prefix, getClass().getSimpleName(), cmd.toString(javaToolsJar));
-        }
-
+        final var javaToolsJar = resolveJavaTools(cmd);
         final var builder = resultBuilder(cmd);
         return createExecResult(builder.execResult(project.getProject().javaexec(spec -> {
             redirectIo(builder, spec);
@@ -52,7 +43,7 @@ public class JavaExecLauncher<E extends XtcLauncherTaskExtension, T extends XtcL
         })));
     }
 
-    private File resolveJavaTools() {
+    private File resolveJavaTools(final CommandLine cmd) {
         // TODO: Way too complicated, just making absolutely sure that we don't mix class paths for e.g. XDK development, and something
         //   that is a distribution installed locally, thinking one is the other. This can be solved through artifact signing instead.
 
@@ -92,39 +83,39 @@ public class JavaExecLauncher<E extends XtcLauncherTaskExtension, T extends XtcL
         final File resolvedFromConfig = javaToolsFromConfig.isEmpty() ? null : javaToolsFromConfig.getSingleFile();
         final File resolvedFromXdk = javaToolsFromXdk.isEmpty() ? null : javaToolsFromXdk.getSingleFile();
         if (resolvedFromConfig == null && resolvedFromXdk == null) {
-            throw buildException("ERROR: Failed to resolve 'javatools.jar' from any configuration or dependency.");
+            throw buildException("ERROR: Failed to resolve '{}' from any configuration or dependency.", JAVATOOLS_JAR_NAME);
         }
 
         logger.info("""
-                {} Check for 'javatools.jar' in {} config and XDK (unpacked zip, or module collection) dependency, if present.
+                {} Check for '{}' in {} config and XDK (unpacked zip, or module collection) dependency, if present.
                 {}     Resolved to: [xdkJavaTools: {}, xdkContents: {}]
-                """.trim(), prefix, XDK_CONFIG_NAME_JAVATOOLS_INCOMING, prefix, resolvedFromConfig, resolvedFromXdk);
+                """.trim(), prefix, JAVATOOLS_JAR_NAME, XDK_CONFIG_NAME_JAVATOOLS_INCOMING, prefix, resolvedFromConfig, resolvedFromXdk);
 
         final String versionConfig = readXdkVersionFromJar(resolvedFromConfig);
         final String versionXdk = readXdkVersionFromJar(resolvedFromXdk);
         if (resolvedFromConfig != null && resolvedFromXdk != null) {
             if (!versionConfig.equals(versionXdk) || !areIdenticalFiles(resolvedFromConfig, resolvedFromXdk)) {
-                logger.warn("{} Different 'javatools.jar' files resolved, preferring the non-XDK version: {}", prefix, resolvedFromConfig.getAbsolutePath());
-                return processJar(resolvedFromConfig);
+                logger.warn("{} Different '{}' files resolved, preferring the non-XDK version: {}", prefix, JAVATOOLS_JAR_NAME, resolvedFromConfig.getAbsolutePath());
+                return processJavaToolsJar(cmd, resolvedFromConfig);
             }
         }
 
         if (resolvedFromConfig != null) {
             assert resolvedFromXdk == null;
-            logger.info("{} Resolved unique 'javatools.jar' from config/artifacts/dependencies: {} (version: {})", prefix, resolvedFromConfig.getAbsolutePath(), versionConfig);
-            return processJar(resolvedFromConfig);
+            logger.info("{} Resolved unique '{}' from config/artifacts/dependencies: {} (version: {})", prefix, JAVATOOLS_JAR_NAME, resolvedFromConfig.getAbsolutePath(), versionConfig);
+            return processJavaToolsJar(cmd, resolvedFromConfig);
         }
 
-        logger.info("{} Resolved unique 'javatools.jar' from XDK: {} (version: {})", prefix, resolvedFromXdk.getAbsolutePath(), versionXdk);
-        return processJar(resolvedFromXdk);
+        logger.info("{} Resolved unique '{}' from XDK: {} (version: {})", prefix, JAVATOOLS_JAR_NAME, resolvedFromXdk.getAbsolutePath(), versionXdk);
+        return processJavaToolsJar(cmd, resolvedFromXdk);
     }
 
     private boolean areIdenticalFiles(final File f1, final File f2) {
         try {
             return FileUtils.areIdenticalFiles(f1, f2);
         } catch (final IOException e) {
-            throw buildException("{} Resolved non-identical multiple 'javatools.jar' ('{}' and '{}')",
-                prefix, f1.getAbsolutePath(), f2.getAbsolutePath());
+            throw buildException("{} Resolved non-identical multiple '{}' ('{}' and '{}')",
+                prefix, JAVATOOLS_JAR_NAME, f1.getAbsolutePath(), f2.getAbsolutePath());
         }
     }
 
@@ -137,9 +128,18 @@ public class JavaExecLauncher<E extends XtcLauncherTaskExtension, T extends XtcL
         }
     }
 
-    protected File processJar(final File file) {
-        assert file.exists();
-        checkIsJarFile(file);
-        return file;
+    private File processJavaToolsJar(final CommandLine cmd, final File javaToolsJar) {
+        if (javaToolsJar == null) {
+            throw buildException("Failed to resolve '{}' in any classpath.", JAVATOOLS_JAR_NAME);
+        }
+
+        assert javaToolsJar.exists();
+        checkIsJarFile(javaToolsJar);
+
+        logger.info("{} {} (launcher: {}); Using '{}' in classpath from: {}", prefix, cmd.getIdentifier(), cmd.getClass(), JAVATOOLS_JAR_NAME, javaToolsJar.getAbsolutePath());
+        if (hasVerboseLogging()) {
+            logger.lifecycle("{} JavaExec command (launcher {}): {}", prefix, getClass().getSimpleName(), cmd.toString(javaToolsJar));
+        }
+        return javaToolsJar;
     }
 }

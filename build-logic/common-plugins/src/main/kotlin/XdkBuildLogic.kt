@@ -57,10 +57,6 @@ class XdkBuildLogic private constructor(project: Project) : XdkProjectBuildLogic
         return xdkGitHub
     }
 
-    fun resolveLocalXdkInstallation(): File {
-        return findLocalXdkInstallation() ?: throw project.buildException("Could not find local installation of XVM.")
-    }
-
     companion object {
         const val DEFAULT_JAVA_BYTECODE_VERSION = 20 // TODO: We still have to compile to 20 bytecode, because Kotlin 1.9 does not support 21.
         const val XDK_TASK_GROUP_DEBUG = "debug"
@@ -90,6 +86,10 @@ class XdkBuildLogic private constructor(project: Project) : XdkProjectBuildLogic
             return instance
         }
 
+        fun getDateTimeStampWithTz(file: File): String {
+            return getDateTimeStampWithTz(file.lastModified())
+        }
+
         fun getDateTimeStampWithTz(ms: Long = System.currentTimeMillis()): String {
             return SimpleDateFormat(DATE_TIME_FORMAT, Locale.getDefault()).format(Date(ms))
         }
@@ -97,10 +97,6 @@ class XdkBuildLogic private constructor(project: Project) : XdkProjectBuildLogic
         fun findExecutableOnPath(executable: String): Path? {
             return System.getenv(ENV_PATH)?.split(File.pathSeparator)?.map { File(it, executable) }
                 ?.find { it.exists() && it.canExecute() }?.toPath()?.toRealPath()
-        }
-
-        fun findLocalXdkInstallation(): File? {
-            return findExecutableOnPath(XTC_LAUNCHER)?.toFile()?.parentFile?.parentFile?.parentFile // xec -> bin -> libexec -> "x.y.z.ppp"
         }
 
         /**

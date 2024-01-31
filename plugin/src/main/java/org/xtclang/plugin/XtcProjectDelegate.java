@@ -38,7 +38,9 @@ import static org.gradle.api.attributes.LibraryElements.LIBRARY_ELEMENTS_ATTRIBU
 import static org.gradle.api.plugins.ApplicationPlugin.APPLICATION_GROUP;
 import static org.gradle.api.tasks.SourceSet.MAIN_SOURCE_SET_NAME;
 import static org.gradle.language.base.plugins.LifecycleBasePlugin.BUILD_GROUP;
+import static org.xtclang.plugin.XtcPluginConstants.FS;
 import static org.xtclang.plugin.XtcPluginConstants.UNSPECIFIED;
+import static org.xtclang.plugin.XtcPluginConstants.XDK_BUILD_OUTPUT_DIR;
 import static org.xtclang.plugin.XtcPluginConstants.XDK_CONFIG_NAME_ARTIFACT_JAVATOOLS_FATJAR;
 import static org.xtclang.plugin.XtcPluginConstants.XDK_CONFIG_NAME_CONTENTS;
 import static org.xtclang.plugin.XtcPluginConstants.XDK_CONFIG_NAME_INCOMING;
@@ -184,7 +186,7 @@ public class XtcProjectDelegate extends ProjectDelegate<Void, Void> {
     }
 
     private String getXtcSourceDirectoryRootPath(final SourceSet sourceSet) {
-        return "src/" + sourceSet.getName() + '/' + XTC_SOURCE_SET_DIRECTORY_ROOT_NAME;
+        return "src" + FS + sourceSet.getName() + FS + XTC_SOURCE_SET_DIRECTORY_ROOT_NAME;
     }
 
     @SuppressWarnings({"SameParameterValue", "unused"})
@@ -202,7 +204,7 @@ public class XtcProjectDelegate extends ProjectDelegate<Void, Void> {
     }
 
     public static Provider<Directory> getXdkContentsDir(final Project project) {
-        return project.getLayout().getBuildDirectory().dir("xtc/xdk/lib");
+        return project.getLayout().getBuildDirectory().dir(XDK_BUILD_OUTPUT_DIR);
     }
 
     public Provider<Directory> getXdkContentsDir() {
@@ -210,15 +212,15 @@ public class XtcProjectDelegate extends ProjectDelegate<Void, Void> {
     }
 
     public FileCollection getXtcCompilerOutputModules(final SourceSet sourceSet) {
-        return buildDir.files(XTC_LANGUAGE_NAME + '/' + sourceSet.getName() + "/lib");
+        return buildDir.files(XTC_LANGUAGE_NAME + FS + sourceSet.getName() + FS + "lib");
     }
 
     public Provider<Directory> getXtcCompilerOutputDirModules(final SourceSet sourceSet) {
-        return buildDir.dir(XTC_LANGUAGE_NAME + '/' + sourceSet.getName() + "/lib");
+        return buildDir.dir(XTC_LANGUAGE_NAME + FS + sourceSet.getName() + FS + "lib");
     }
 
     public Provider<Directory> getXtcCompilerOutputResourceDir(final SourceSet sourceSet) {
-        return buildDir.dir(XTC_LANGUAGE_NAME + '/' + sourceSet.getName() + "/resources");
+        return buildDir.dir(XTC_LANGUAGE_NAME + FS + sourceSet.getName() + FS + "resources");
     }
 
     public static String getCompileTaskName(final SourceSet sourceSet) {
@@ -238,15 +240,6 @@ public class XtcProjectDelegate extends ProjectDelegate<Void, Void> {
         }
         sb.append(capitalize(XTC_LANGUAGE_NAME));
         return sb.toString();
-    }
-
-    private static String getClassesTaskName(final SourceSet sourceSet) {
-        return isMainSourceSet(sourceSet) ? "classes" : sourceSet.getName() + "Classes";
-    }
-
-    @SuppressWarnings("unused")
-    private static String getProcessResourcesTaskName(final SourceSet sourceSet) {
-        return isMainSourceSet(sourceSet) ? "processResources" : "process" + capitalize(sourceSet.getName()) + "Resources";
     }
 
     private static boolean isMainSourceSet(final SourceSet sourceSet) {
@@ -277,10 +270,22 @@ public class XtcProjectDelegate extends ProjectDelegate<Void, Void> {
             });
         });
 
+        //
         // Find the "classes" task in the Java build life cycle that we reuse, and set the dependency correctly. This should
         // wire in process resources too, but for some reason it seems to work differently. Basically this goes to the
         // "assemble" task, but we want to reuse some of the Java life cycle internally.
-        tasks.getByName(getClassesTaskName(sourceSet)).dependsOn(compileTask);
+        //
+        // TODO: Either break out the xtc lifecycle and source set completely from Java, or start by
+        //  investigating if we can get a process resources in that works, and resolves, so that we can
+        //  always use the built resources from the compiler/runner. This got into complicated source set
+        //  implicit dependencies before, but we can gradually fix that. Either way, we should not inherit
+        //  a processResources task with Java semantics, as ours needs to be called before compile. It should
+        //  obey Gradle semantics though, and allow for resource processing.
+        //
+        // So for XTC right now:  compileXtc <- classes
+        // Actually, it's already the case that compileXtc depends on classes, which should already depend
+        // on process resources, so it SHOULD work to just refer to the resource output directory.
+        tasks.getByName(sourceSet.getClassesTaskName()).dependsOn(compileTask);
 
         logger.info("{} Mapping source set to compile task: {} -> {}", prefix, sourceSet.getName(), compileTaskName);
         logger.info("{} Registered and configured compile task for sourceSet: {}", prefix, sourceSet.getName());

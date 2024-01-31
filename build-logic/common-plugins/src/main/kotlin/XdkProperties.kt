@@ -83,24 +83,36 @@ class XdkPropertiesImpl(project: Project): XdkProjectBuildLogic(project), XdkPro
             // TODO: Remove this artificial limitation.
             throw project.buildException("ERROR: XdkProperties are currently expected to start with org.xtclang. Remove this artificial limitation.")
         }
-        if (!has(key)) {
-            return defaultValue?.also {
-                logger.info("$prefix XdkProperties; resolved property '$key' to its default value.")
-            } ?: throw project.buildException("ERROR: XdkProperty '$key' has no value, and no default was given.")
-        }
 
         // First check a system env override
         val envKey = toSystemEnvKey(key)
         val envValue = System.getenv(envKey)
         if (envValue != null) {
-            logger.info("$prefix XdkProperties; resolved System ENV property '$key' (${envKey}).")
+            logger.info("$prefix XdkProperties; resolved System environment property '$key' (${envKey}).")
             return envValue.toString()
         }
 
+        // Then check if this is a project property
+        val propVal = project.findProperty(key)
+        if (propVal != null) {
+            logger.info("$prefix XdkProperties; resolve Project property: '$key'.")
+            return propVal.toString()
+        }
+
+        // Then check Java System properties
         val sysPropValue = System.getProperty(key)
         if (sysPropValue != null) {
             logger.info("$prefix XdkProperties; resolved Java System property '$key'.")
             return sysPropValue.toString()
+        }
+
+        val hasDefaultValue = defaultValue != null
+        if (!has(key)) {
+            if (hasDefaultValue) {
+                logger.info("$prefix XdkProperties; resolved property '$key' to its default value.")
+                return defaultValue!!
+            }
+            throw project.buildException("ERROR: XdkProperty '$key' has no value, and no default was given.")
         }
 
         logger.info("$prefix XdkProperties; resolved property '$key' from properties table.")
@@ -112,7 +124,7 @@ class XdkPropertiesImpl(project: Project): XdkProjectBuildLogic(project), XdkPro
     }
 
     override fun get(key: String, defaultValue: Boolean?): Boolean {
-        return get(key, defaultValue.toString()).toBoolean()
+        return get(key, defaultValue?.toString()).toBoolean()
     }
 
     override fun has(key: String): Boolean {

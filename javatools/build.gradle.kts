@@ -110,9 +110,10 @@ val sanityCheckJar by tasks.registering {
     dependsOn(jar)
 
     val checkJar = getXdkPropertyBoolean("org.xtclang.javatools.sanityCheckJar")
-    val expectedEntryCount = getXdkPropertyInt("org.xtclang.javatools.verifyJar.expectedFileCount", -1)
+    val expectedEntryCount = getXdkPropertyInt("org.xtclang.javatools.sanityCheckJar.expectedFileCount", -1)
     inputs.properties("sanityCheckJarBoolean" to checkJar, "sanityCheckJarEntryCount" to expectedEntryCount)
-    inputs.file(jar)
+    inputs.files(jar)
+    outputs.files(jar)
 
     logger.info("$prefix Configuring sanityCheckJar task (enabled: $checkJar, expected entry count: $expectedEntryCount)")
 
@@ -133,6 +134,6 @@ val sanityCheckJar by tasks.registering {
             expectedEntryCount
         ) // Check for files in both javatools_utils and javatools + implicit.x
 
-        logger.info("$prefix Sanity check of javatools.jar completed successfully.")
+        logger.lifecycle("$prefix Java tools jar was rebuilt. Sanity check of new 'javatools.jar' file completed successfully.")
     }
 }

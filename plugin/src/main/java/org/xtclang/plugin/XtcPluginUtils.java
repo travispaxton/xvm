@@ -16,9 +16,7 @@ import java.util.jar.JarFile;
 import java.util.jar.Manifest;
 
 import static java.util.Objects.requireNonNull;
-import static org.xtclang.plugin.XtcPluginConstants.XDK_JAVATOOLS_ARTIFACT_ID;
-import static org.xtclang.plugin.XtcPluginConstants.XTC_MAGIC;
-import static org.xtclang.plugin.XtcPluginConstants.XTC_MODULE_FILE_EXTENSION;
+import static org.xtclang.plugin.XtcPluginConstants.*;
 
 /**
  * XTC Plugin Helper methods in a utility class.
@@ -110,7 +108,7 @@ public final class XtcPluginUtils {
                 }
                 return implVersion.toString();
             } catch (final IOException e) {
-                throw new XtcBuildRuntimeException(e, "Not a valid 'javatools.jar': '{}'", path);
+                throw new XtcBuildRuntimeException(e, "Not a valid '{}': '{}'", JAVATOOLS_JAR_NAME, path);
             }
         }
 

@@ -30,8 +30,18 @@ dependencies {
     xdkTurtle(libs.javatools.turtle) // A dependency declaration like this works equally well if we are working with an included build/project or with an artifact. This is exactly what we want.
 }
 
+// TODO Figure out why output filename renaming doesn't work with the build cache.
 val compileXtc by tasks.existing(XtcCompileTask::class) {
     outputFilename("mack.xtc" to "javatools_turtle.xtc")
+    doLast {
+        printTaskDependencies()
+    }
+}
+
+val extractXdk by tasks.existing {
+    doLast {
+        printTaskDependencies()
+    }
 }
 
 /**
@@ -44,6 +54,9 @@ sourceSets {
     main {
         xtc {
             // mack.x is in a different project, and does not build on its own, hence we add it to the lib_ecstasy source set instead.
+            // This will transitively add the dependency compileXtc <- javatools-turtle:processResources
+            // In the Java plugin: processResources <- compileJava, classes
+            // This means that resources typically are processed after the source code is compiled.
             srcDir(xdkTurtle)
         }
         //resources {
@@ -55,4 +68,11 @@ sourceSets {
     }
 }
 
-// TODO Add resource processing for unicode
+
+val processResources by tasks.existing {
+    doLast {
+        logger.lifecycle("$prefix Data.")
+        logger.lifecycle("Say what.")
+        printTaskDependencies()
+    }
+}
