@@ -16,7 +16,6 @@ import org.gradle.api.tasks.PathSensitivity;
 import org.gradle.api.tasks.SourceSet;
 import org.gradle.api.tasks.TaskAction;
 import org.xtclang.plugin.XtcCompilerExtension;
-import org.xtclang.plugin.XtcPluginUtils;
 import org.xtclang.plugin.XtcPluginUtils.FileUtils;
 import org.xtclang.plugin.XtcProjectDelegate;
 import org.xtclang.plugin.launchers.CommandLine;

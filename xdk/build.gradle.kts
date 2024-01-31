@@ -10,7 +10,7 @@ import org.gradle.language.base.plugins.LifecycleBasePlugin.BUILD_GROUP
 import org.xtclang.plugin.tasks.XtcCompileTask
 import java.io.ByteArrayOutputStream
 import java.nio.file.Files
-import java.util.*
+import java.util.Locale
 
 /**
  * XDK root project, collecting the lib_* xdk builds as includes, not includedBuilds ATM,
@@ -220,6 +220,14 @@ val assembleDist by tasks.existing {
     }
 }
 
+/**
+ * Create a Windows self unpacking exe installer using NSIS.
+ *
+ * This should either be changed or containerized (see the xdk-release repo) to be part of our build pipeline. Or we should
+ * just let Windows users use the same zip installer methodology as anyone else. Launchers
+ * will likely be application config scripts instead, which should free us from a lot
+ * of extra logic concerning just the Windows platform.
+ */
 val distExe by tasks.registering {
     group = DISTRIBUTION_TASK_GROUP
     description = "Use an NSIS compatible plugin to create the Windows .exe installer."
@@ -307,6 +315,11 @@ val installLocalDist by tasks.registering {
     description = "Installs an XDK distribution in $compositeRootProjectDirectory/build/dist, for the current platform ($osName)"
     logger.lifecycle("$prefix Created installLocalDist task for $osName, depends on $taskName.")
     dependsOn(taskName)
+    doLast {
+        val binDir = "${xdkDist.getLocalDistDir().get().asFile.absolutePath}/bin"
+        logger.lifecycle("$prefix Finished $name; make sure that $binDir is in your PATH.")
+        logger.lifecycle("$prefix (for example: 'export PATH=$binDir:\$PATH')")
+    }
 }
 
 private val installLocalDistPds = supportedOsNames.map { osName ->

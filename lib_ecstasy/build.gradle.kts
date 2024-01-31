@@ -25,7 +25,6 @@ val xdkTurtle by configurations.registering {
 }
 
 dependencies {
-    // TODO: Find out why xdkJavaTools is not an unstable API, while xdkTurtle and xdkUnicode are.
     xdkJavaTools(libs.javatools)
     @Suppress("UnstableApiUsage")
     xdkTurtle(libs.javatools.turtle) // A dependency declaration like this works equally well if we are working with an included build/project or with an artifact. This is exactly what we want.

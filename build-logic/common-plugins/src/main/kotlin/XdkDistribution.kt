@@ -74,6 +74,10 @@ class XdkDistribution(project: Project): XdkProjectBuildLogic(project) {
         }
     }
 
+    fun getLocalDistDir(osName: String = getCurrentOsName()): Provider<Directory> {
+        return project.compositeRootBuildDirectory.dir("dist/$osName")
+    }
+
     fun shouldCreateWindowsDistribution(): Boolean {
         val runDistExe = project.getXdkPropertyBoolean("org.xtclang.install.distExe", false)
         if (runDistExe) {
