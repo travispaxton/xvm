@@ -246,7 +246,7 @@ class AssertingExecutionListener
                     .assertCompleted()
                     .assertResult(result -> {
                         assert result.status == Failed;
-                        assert result.exception.is(errorType);
+                        assert result.exception.is(errorType) as $"expected exception {errorType} but caught {result.exception}";
                         assert result.duration != Duration.None;
                         });
         }

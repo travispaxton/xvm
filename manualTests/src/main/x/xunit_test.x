@@ -39,6 +39,7 @@ module xunit_test.xtclang.org {
         Int  passed = 0;
         Int  failed = 0;
 
+
         if (clz.is(Test)) {
             if (clz.group == Test.Omit) {
                 return passed, failed;
