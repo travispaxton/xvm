@@ -57,6 +57,8 @@ xdk-oodb = { group = "org.xtclang", name = "lib-oodb", version.ref = "xdk" }
 xdk-web = { group = "org.xtclang", name = "lib-web", version.ref = "xdk" }
 xdk-webauth = { group = "org.xtclang", name = "lib-webauth", version.ref = "xdk" }
 xdk-xenia = { group = "org.xtclang", name = "lib-xenia", version.ref = "xdk" }
+xdk-xunit = { group = "org.xtclang", name = "lib-xunit", version.ref = "xdk" }
+xdk-xunit-engine = { group = "org.xtclang", name = "lib-xunit-engine", version.ref = "xdk" }
 
 javatools = { group = "org.xtclang", name = "javatools", version.ref = "xdk" }
 javatools-unicode = { group = "org.xtclang", name = "javatools-unicode", version.ref = "xdk" }

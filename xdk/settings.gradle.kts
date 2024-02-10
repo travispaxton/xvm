@@ -29,6 +29,8 @@ listOfNotNull(
     "lib_web",
     "lib_webauth",
     "lib_xenia",
+    "lib_xunit",
+    "lib_xunit_engine",
     "javatools_turtle",
     "javatools_launcher",
     "javatools_bridge"
