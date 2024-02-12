@@ -48,11 +48,10 @@ class ExtensionRegistry
      *
      * @param type  the type of `Extension` to return
      */
-    <ExtensionType extends Extension> ExtensionType[] get(Type<ExtensionType> type) {
-        return getByType(type)
-            .map(holder -> holder.extension.as(ExtensionType))
-            .toArray();
-        }
+    <ExtensionType extends Extension> ExtensionType[] get(Type<ExtensionType> type) =
+            getByType(type)
+                .map(holder -> holder.extension.as(ExtensionType))
+                .toArray();
 
     /**
      * Add an `Extension` to this registry.
@@ -160,9 +159,7 @@ class ExtensionRegistry
          *
          * @return `True` if this holder contains an `Extension` of the specified `Type`
          */
-        Boolean isType(Type type) {
-            return type.isInstance(extension);
-        }
+        Boolean isType(Type type) = type.isInstance(extension);
 
         /**
          * Order holders by priority.

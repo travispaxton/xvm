@@ -37,9 +37,7 @@ const UniqueId
      *
      * @return the type of this `UniqueId`
      */
-    @Lazy SegmentType type.calc() {
-        return segments[size -1].type;
-    }
+    @Lazy SegmentType type.calc() = segments[size -1].type;
 
     /**
      * Return the value of this `UniqueId`.
@@ -48,9 +46,7 @@ const UniqueId
      *
      * @return the value of this `UniqueId`
      */
-    @Lazy String value.calc() {
-        return segments[size -1].value;
-    }
+    @Lazy String value.calc() = segments[size -1].value;
 
     /**
      * Return the path for this `UniqueId`.
@@ -94,9 +90,7 @@ const UniqueId
      * @param type   the `Segment` type
      * @param value  the `Segment` value
      */
-    UniqueId! append(SegmentType type, String value) {
-        return new UniqueId(segments + new Segment(type, value));
-    }
+    UniqueId! append(SegmentType type, String value) = new UniqueId(segments + new Segment(type, value));
 
     /**
      * Returns the parent of this `UniqueId`.
@@ -128,21 +122,16 @@ const UniqueId
     }
 
     @Override
-    static <CompileType extends UniqueId> Boolean equals(CompileType value1, CompileType value2) {
-        return value1.segments == value2.segments;
-    }
+    static <CompileType extends UniqueId> Boolean equals(CompileType value1, CompileType value2)
+            = value1.segments == value2.segments;
 
     // ----- Stringable methods --------------------------------------------------------------------
 
     @Override
-    Int estimateStringLength() {
-        return stringValue.size;
-    }
+    Int estimateStringLength() = stringValue.size;
 
     @Override
-    Appender<Char> appendTo(Appender<Char> buf) {
-        return stringValue.appendTo(buf);
-    }
+    Appender<Char> appendTo(Appender<Char> buf) = stringValue.appendTo(buf);
 
     // ----- factory methods -----------------------------------------------------------------------
 

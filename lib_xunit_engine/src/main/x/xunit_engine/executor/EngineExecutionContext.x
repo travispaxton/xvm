@@ -35,9 +35,7 @@ class EngineExecutionContext
     /**
      * The `UniqueId` of the current test fixture.
      */
-    UniqueId uniqueId.get() {
-        return model.uniqueId;
-     }
+    UniqueId uniqueId.get() = model.uniqueId;
 
     /**
      * The human readable name for the test.
@@ -102,27 +100,21 @@ class EngineExecutionContext
      *
      * @param model  the `Model` to execute
      */
-    static Builder builder(Model model) {
-        return new Builder(model);
-    }
+    static Builder builder(Model model)= new Builder(model);
 
     /**
      * Create a `EngineExecutionContext` from the specified `Model`.
      *
      * @param model  the `Model` to execute
      */
-    static EngineExecutionContext create(Model model) {
-        return builder(model).build();
-    }
+    static EngineExecutionContext create(Model model)= builder(model).build();
 
     /**
      * Create a `Builder` from this context and the specified `Model`.
      *
      * @param model  the `Model` to execute
      */
-    Builder asBuilder(Model model) {
-        return new Builder(this, model);
-     }
+    Builder asBuilder(Model model) = new Builder(this, model);
 
     /**
      * Invoke a `MethodOrFunction` using any registered `ParameterResolver` resources
@@ -286,8 +278,6 @@ class EngineExecutionContext
             return this;
         }
 
-        EngineExecutionContext build() {
-            return new EngineExecutionContext(this);
-        }
+        EngineExecutionContext build() = new EngineExecutionContext(this);
     }
 }

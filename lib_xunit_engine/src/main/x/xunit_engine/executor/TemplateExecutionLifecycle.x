@@ -21,9 +21,8 @@ const TemplateExecutionLifecycle
     // ----- ExecutionLifecycle methods ------------------------------------------------------------
 
     @Override
-    List<Model> getChildren(EngineExecutionContext context) {
-        return createChildren(model.template.templateFactories, 0, context, new Array());
-    }
+    List<Model> getChildren(EngineExecutionContext context) =
+            createChildren(model.template.templateFactories, 0, context, new Array());
 
     // ----- helper methods ------------------------------------------------------------------------
 

@@ -25,7 +25,5 @@ const TemplateModel
     public/private Model template;
 
     @Override
-    ExecutionLifecycle createExecutionLifecycle() {
-        return new TemplateExecutionLifecycle(this);
-    }
+    ExecutionLifecycle createExecutionLifecycle() = new TemplateExecutionLifecycle(this);
 }

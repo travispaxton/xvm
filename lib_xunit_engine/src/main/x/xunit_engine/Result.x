@@ -16,9 +16,7 @@ const Result(Status status, Exception? exception = Null, Exception[]? suppressed
      *
      * @return a copy of this `Result` with a specific duration
      */
-    Result withDuration(Duration d) {
-        return new Result(status, exception, suppressed, d);
-    }
+    Result withDuration(Duration d) = new Result(status, exception, suppressed, d);
 
     /**
      * A singleton `Result` representing a successful test fixture.

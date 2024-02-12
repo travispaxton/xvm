@@ -165,9 +165,7 @@ package selectors {
         return selectors;
     }
 
-    Selector forMethod(Class clz, MethodOrFunction testMethod) {
-        return new MethodSelector(clz, testMethod);
-    }
+    Selector forMethod(Class clz, MethodOrFunction testMethod) = new MethodSelector(clz, testMethod);
 
     conditional Selector forPackage(Type type) {
         if (type.isA(Package)) {

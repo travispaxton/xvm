@@ -1,7 +1,8 @@
 import ecstasy.reflect.Parameter;
 
 /**
- * A `ParameterResolver` is able to resolve values for parameters to be used to call methods and functions.
+ * A `ParameterResolver` is able to resolve values for parameters to be used
+ * when executing test methods and functions.
  */
 interface ParameterResolver {
     /**
@@ -30,7 +31,6 @@ interface ParameterResolver {
         if (unresolved.empty) {
             return values;
         }
-
         ParameterResolver[] resolvers = context.registry.getResources(ParameterResolver);
         throw new IllegalState($"Failed to resolve parameters: unresolved={unresolved} resolvers={resolvers}");
     }
@@ -71,7 +71,6 @@ interface ParameterResolver {
                 unresolved.add(param);
             }
         }
-
         return paramValues, unresolved;
     }
 

@@ -49,21 +49,15 @@ const ContainerModel
     }
 
     @Override
-    ExecutionLifecycle createExecutionLifecycle() {
-        return new ContainerExecutionLifecycle(this);
-    }
+    ExecutionLifecycle createExecutionLifecycle() = new ContainerExecutionLifecycle(this);
 
     // ----- Stringable methods --------------------------------------------------------------------
 
     @Override
-    Int estimateStringLength() {
-        return stringValue.size;
-    }
+    Int estimateStringLength() = stringValue.size;
 
     @Override
-    Appender<Char> appendTo(Appender<Char> buf) {
-        return stringValue.appendTo(buf);
-    }
+    Appender<Char> appendTo(Appender<Char> buf) = stringValue.appendTo(buf);
 
     // ----- inner service: Builder ----------------------------------------------------------------
 
@@ -94,7 +88,6 @@ const ContainerModel
             Type                type        = clz.toType();
             Model.Constructor?  constructor = clz.isSingleton() ? Null : utils.findTestConstructor(type);
             ExtensionProvider[] providers   = utils.findExtensions(clz);
-
             return new ContainerModel(uniqueId, clz, name, constructor, providers, children);
         }
     }

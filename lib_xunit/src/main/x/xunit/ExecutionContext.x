@@ -1,6 +1,6 @@
 /**
- * A holder of information that an `ExtensionProvider` can use to provide
- * an `Extension`.
+ * A holder of information that an `ExtensionProvider` can use
+ * when providing an `Extension`.
  */
 interface ExecutionContext {
     /**

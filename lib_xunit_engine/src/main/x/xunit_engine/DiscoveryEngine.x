@@ -23,7 +23,5 @@ interface DiscoveryEngine
      *
      * @return an instance of the default `DiscoveryEngine`
      */
-    static DiscoveryEngine create() {
-        return new DefaultDiscoveryEngine();
-    }
+    static DiscoveryEngine create() = new DefaultDiscoveryEngine();
 }

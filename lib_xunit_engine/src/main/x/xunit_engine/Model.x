@@ -83,16 +83,12 @@ interface Model
 	 *
 	 * A root model is a model without a parent.
 	 */
-	Boolean isRoot() {
-		return parentId == Null;
-    }
+	Boolean isRoot() = parentId == Null;
 
 	/**
 	 * Determine if this model may register dynamic tests during execution.
 	 */
-	Boolean mayRegisterTests() {
-		return False;
-    }
+	Boolean mayRegisterTests() = False;
 
 	/**
 	 * Determine if the supplied model (or any of its descendants)
@@ -103,10 +99,8 @@ interface Model
 	 * @return `True` if the model is a test, contains tests, or may
 	 *         later register tests dynamically
 	 */
-	static Boolean containsTests(Model model) {
-		return !model.isContainer || model.mayRegisterTests()
-				|| model.children.any((d) -> d.containsTests());
-    }
+	static Boolean containsTests(Model model) =
+	        !model.isContainer || model.mayRegisterTests() || model.children.any((d) -> d.containsTests());
 
 	/**
 	 * Find the model with the supplied unique ID.
@@ -167,21 +161,16 @@ interface Model
     /**
      * Compare two Model values for equality.
      */
-    static <CompileType extends Model> Boolean equals(CompileType value1, CompileType value2) {
-        return value1.uniqueId == value2.uniqueId;
-    }
+    static <CompileType extends Model> Boolean equals(CompileType value1, CompileType value2) =
+            value1.uniqueId == value2.uniqueId;
 
     // ----- Stringable methods --------------------------------------------------------------------
 
     @Override
-    Int estimateStringLength() {
-        return displayName.estimateStringLength();
-    }
+    Int estimateStringLength() = displayName.estimateStringLength();
 
     @Override
-    Appender<Char> appendTo(Appender<Char> buf) {
-        return displayName.appendTo(buf);
-    }
+    Appender<Char> appendTo(Appender<Char> buf) = displayName.appendTo(buf);
 
     // ----- Visitor interface ---------------------------------------------------------------------
 

@@ -61,9 +61,7 @@ const MethodExecutionLifecycle
 	}
 
     @Override
-	EngineExecutionContext before(ExceptionCollector collector, EngineExecutionContext context, ExtensionRegistry extensions) {
-        return context;
-	}
+	EngineExecutionContext before(ExceptionCollector collector, EngineExecutionContext context, ExtensionRegistry extensions) = context;
 
     @Override
 	EngineExecutionContext execute(ExceptionCollector collector, EngineExecutionContext context, ExtensionRegistry extensions) {
@@ -133,7 +131,6 @@ const MethodExecutionLifecycle
      * @param builder     the `EngineExecutionContext` builder that may be modified
      * @param extensions  the `ExtensionRegistry` to add `Extensions` to
      */
-    protected void prepare(EngineExecutionContext.Builder builder, ExtensionRegistry extensions)
-        {
-        }
+    protected void prepare(EngineExecutionContext.Builder builder, ExtensionRegistry extensions) {
+    }
 }

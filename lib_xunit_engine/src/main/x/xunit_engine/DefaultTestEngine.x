@@ -68,7 +68,6 @@ service DefaultTestEngine
      *
      * @return the modified `EngineExecutionContext.Builder` to modify
      */
-    protected EngineExecutionContext.Builder modifyExecutionContext(EngineExecutionContext.Builder builder) {
-        return builder.withListener(listener);
-    }
+    protected EngineExecutionContext.Builder modifyExecutionContext(EngineExecutionContext.Builder builder) =
+            builder.withListener(listener);
 }

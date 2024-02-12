@@ -7,17 +7,13 @@ import xunit.SkipResult;
  * to handle various phases of a test lifecycle.
  */
 interface ExecutionLifecycle
-        extends Const
-    {
+        extends Const {
     /**
      * Return the child `Model`s.
      *
      * @return the child `Model`s
      */
-    List<Model> getChildren(EngineExecutionContext context)
-        {
-        return [];
-        }
+    List<Model> getChildren(EngineExecutionContext context) = [];
 
 	/**
 	 * Prepare an EngineExecutionContext prior to execution.
@@ -27,10 +23,7 @@ interface ExecutionLifecycle
 	 * @param parentExtensions` the optional parent model's extensions
 	 */
 	EngineExecutionContext prepare(EngineExecutionContext context, ExtensionRegistry extensions,
-	        ExtensionRegistry? parentExtensions)
-	    {
-		return context;
-	    }
+	        ExtensionRegistry? parentExtensions) = context;
 
 	/**
 	 * Determine whether the execution of the supplied EngineExecutionContext
@@ -38,10 +31,7 @@ interface ExecutionLifecycle
 	 *
 	 * @param context  the `EngineExecutionContext` to execute in
 	 */
-	SkipResult shouldBeSkipped(EngineExecutionContext context, ExtensionRegistry extensions)
-	    {
-		return SkipResult.NotSkipped;
-	    }
+	SkipResult shouldBeSkipped(EngineExecutionContext context, ExtensionRegistry extensions) = SkipResult.NotSkipped;
 
 	/**
 	 * Execute the before behavior of this ExecutionLifecycle.
@@ -53,10 +43,8 @@ interface ExecutionLifecycle
 	 *
 	 * @return the context to use to execute children of this ExecutionLifecycle
 	 */
-	EngineExecutionContext before(ExceptionCollector collector, EngineExecutionContext context, ExtensionRegistry extensions)
-	    {
-		return context;
-	    }
+	EngineExecutionContext before(ExceptionCollector collector, EngineExecutionContext context,
+	        ExtensionRegistry extensions) = context;
 
 	/**
 	 * Execute the behavior of this ExecutionLifecycle.
@@ -72,10 +60,8 @@ interface ExecutionLifecycle
 	 * @return the context to use to execute children of this ExecutionLifecycle and execution
 	 *         of the after behaviour in the parent of this ExecutionLifecycle
 	 */
-	EngineExecutionContext execute(ExceptionCollector collector, EngineExecutionContext context, ExtensionRegistry extensions)
-	    {
-		return context;
-	    }
+	EngineExecutionContext execute(ExceptionCollector collector, EngineExecutionContext context,
+	        ExtensionRegistry extensions) = context;
 
 	/**
 	 * Execute any after behavior for this ExecutionLifecycle.
@@ -84,9 +70,8 @@ interface ExecutionLifecycle
 	 * @param collector  the exception collector to use
 	 * @param context    the `EngineExecutionContext` to execute in
 	 */
-	void after(ExceptionCollector collector, EngineExecutionContext context, ExtensionRegistry extensions)
-	    {
-	    }
+	void after(ExceptionCollector collector, EngineExecutionContext context, ExtensionRegistry extensions) {
+    }
 
 	/**
 	 * Clean up the supplied EngineExecutionContext after execution.
@@ -94,9 +79,8 @@ interface ExecutionLifecycle
 	 * @param collector  the exception collector to use
 	 * @param context    the `EngineExecutionContext` to execute in
 	 */
-	void cleanUp(ExceptionCollector collector, EngineExecutionContext context, ExtensionRegistry extensions)
-	    {
-	    }
+	void cleanUp(ExceptionCollector collector, EngineExecutionContext context, ExtensionRegistry extensions) {
+    }
 
 	/**
 	 * a callback that will be invoked if execution of this ExecutionLifecycle was skipped.
@@ -105,9 +89,8 @@ interface ExecutionLifecycle
 	 * @param model    the test model that was skipped
 	 * @param result   the result of skipped execution
 	 */
-	void onSkipped(EngineExecutionContext context, ExtensionRegistry extensions, SkipResult result)
-	    {
-	    }
+	void onSkipped(EngineExecutionContext context, ExtensionRegistry extensions, SkipResult result) {
+    }
 
 	/**
 	 * a callback that will be invoked when execution of this ExecutionLifecycle has completed.
@@ -116,16 +99,17 @@ interface ExecutionLifecycle
 	 * @param model    the test model that was skipped
 	 * @param result   the result of the execution
 	 */
-	void onCompleted(EngineExecutionContext context, ExtensionRegistry extensions, Result result)
-	    {
-	    }
+	void onCompleted(EngineExecutionContext context, ExtensionRegistry extensions, Result result) {
+    }
 
     /**
      * A no-op instance of an `ExecutionLifecycle`.
      */
 	static const NoOp
-	        implements ExecutionLifecycle
-        {
+	        implements ExecutionLifecycle {
+	    /**
+	     * A singleton instance of `NoOp`.
+	     */
         static ExecutionLifecycle Instance = new NoOp();
-        }
     }
+}

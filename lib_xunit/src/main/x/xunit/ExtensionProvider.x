@@ -2,7 +2,6 @@
  * A provider of `Extension`s.
  */
 interface ExtensionProvider {
-
     /**
      * The name of this provider.
      */

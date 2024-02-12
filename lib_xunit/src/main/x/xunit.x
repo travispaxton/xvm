@@ -60,15 +60,27 @@ module xunit.xtclang.org {
      * A function that performs a predicate check on a test fixture.
      */
     typedef function Boolean (Object) as FixturePredicate;
-    
+
+    /**
+     * A `FixturePredicate` that tests a value is a `Method`.
+     */
     static FixturePredicate MethodFixturePredicate = o -> o.is(Method);
 
+    /**
+     * A `FixturePredicate` that tests a value is a `Class`.
+     */
     static FixturePredicate ClassFixturePredicate = o -> o.is(Class);
 
+    /**
+     * A `FixturePredicate` that tests a value is a `Package`.
+     */
     static FixturePredicate PackageFixturePredicate = o -> o.is(Package);
 
    /**
-     * A skipped test result.
+     * The result for a possibly skipped test,
+     *
+     * @param skipped  a flag that is `True` if the test was skipped, or `False` if the test was executed.
+     * @param reason   an optional message to describe why the test was skipped
      */
 	const SkipResult(Boolean skipped, String reason = "unknown") {
 	    /**

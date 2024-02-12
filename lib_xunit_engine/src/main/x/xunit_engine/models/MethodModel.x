@@ -64,26 +64,18 @@ const MethodModel
     /**
      * The lazily calculated string value for this model.
      */
-    @Lazy private String stringValue.calc() {
-        return $"MethodModel(id={uniqueId})";
-    }
+    @Lazy private String stringValue.calc() = $"MethodModel(id={uniqueId})";
 
     @Override
-    ExecutionLifecycle createExecutionLifecycle() {
-        return new MethodExecutionLifecycle(this);
-    }
+    ExecutionLifecycle createExecutionLifecycle() = new MethodExecutionLifecycle(this);
 
     // ----- Stringable methods --------------------------------------------------------------------
 
     @Override
-    Int estimateStringLength() {
-        return stringValue.size;
-    }
+    Int estimateStringLength() = stringValue.size;
 
     @Override
-    Appender<Char> appendTo(Appender<Char> buf) {
-        return stringValue.appendTo(buf);
-    }
+    Appender<Char> appendTo(Appender<Char> buf) = stringValue.appendTo(buf);
 
     // ----- inner service: Builder ----------------------------------------------------------------
 
@@ -122,9 +114,7 @@ const MethodModel
         // ----- Stringable methods ----------------------------------------------------------------
 
         @Override
-        Int estimateStringLength() {
-            return uniqueId.estimateStringLength() + clz.estimateStringLength();
-        }
+        Int estimateStringLength() = uniqueId.estimateStringLength() + clz.estimateStringLength();
 
         @Override
         Appender<Char> appendTo(Appender<Char> buf) {

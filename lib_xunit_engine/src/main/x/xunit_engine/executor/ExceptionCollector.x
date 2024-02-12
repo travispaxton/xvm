@@ -27,24 +27,18 @@ class ExceptionCollector(AbortExecutionPredicate abortExecution = (e) -> False) 
     /**
      * @return `True` iff this collector does not contain an `Exception`
      */
-    Boolean empty.get() {
-        return exception == Null;
-    }
+    Boolean empty.get() = exception == Null;
 
     /**
      * @return `True` iff this collector contains a `PreconditionFailed`
      */
-    Boolean skipped.get() {
-        return exception.is(PreconditionFailed);
-    }
+    Boolean skipped.get() = exception.is(PreconditionFailed);
 
     /**
      * @return `True` iff this collector contains an `Exception`
      * that is not a `PreconditionFailed`.
      */
-    Boolean failed.get() {
-        return exception != Null && !skipped;
-    }
+    Boolean failed.get() = exception != Null && !skipped;
 
     /**
      * @return the `Result` of the test execution based on the state
@@ -69,12 +63,11 @@ class ExceptionCollector(AbortExecutionPredicate abortExecution = (e) -> False) 
      *
      * @param fn  the `Function` to execute
      */
-    Boolean executeVoid(function void () fn) {
-        return executeObject(() -> {
-            fn();
-            return Null;
-        });
-    }
+    Boolean executeVoid(function void () fn) =
+            executeObject(() -> {
+                fn();
+                return Null;
+            });
 
     /**
      * Execute a `Function` that returns a conditional `Result`, collecting any thrown exceptions.

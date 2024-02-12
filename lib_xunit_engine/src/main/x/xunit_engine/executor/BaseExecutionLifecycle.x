@@ -22,9 +22,7 @@ import xunit.MethodOrFunction;
     // ----- ExecutionLifecycle methods ------------------------------------------------------------
 
 	@Override
-    List<Model> getChildren(EngineExecutionContext context) {
-        return model.children;
-    }
+    List<Model> getChildren(EngineExecutionContext context) = model.children;
 
     // ----- helper methods ------------------------------------------------------------------------
 

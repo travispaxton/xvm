@@ -75,16 +75,14 @@ interface ExecutionListener {
         /**
          * Compare two ReportEntry values for the purposes of ordering.
          */
-        static <CompileType extends ReportEntry> Ordered compare(CompileType value1, CompileType value2) {
-            return value1.timestamp <=> value2.timestamp;
-        }
+        static <CompileType extends ReportEntry> Ordered compare(CompileType value1, CompileType value2) =
+                value1.timestamp <=> value2.timestamp;
 
         /**
          * Compare two ReportEntry values for equality.
          */
-        static <CompileType extends ReportEntry> Boolean equals(CompileType value1, CompileType value2) {
-            return value1.timestamp == value2.timestamp;
-        }
+        static <CompileType extends ReportEntry> Boolean equals(CompileType value1, CompileType value2) =
+                value1.timestamp == value2.timestamp;
     }
 
     // ---- inner const: NoOpListener --------------------------------------------------------------

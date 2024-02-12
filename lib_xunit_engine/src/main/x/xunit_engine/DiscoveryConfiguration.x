@@ -34,9 +34,7 @@ const DiscoveryConfiguration {
     /**
      * Return this `DiscoveryConfiguration` as a `Builder`.
      */
-    Builder asBuilder() {
-        return new Builder(this);
-    }
+    Builder asBuilder() = new Builder(this);
 
     /**
      * A convenience method to return the display name for a
@@ -46,9 +44,7 @@ const DiscoveryConfiguration {
      *
      * @return the human readable display name for the `Class`
      */
-    String displayNameFor(Class clz) {
-        return displayNameGenerator.nameForClass(clz);
-    }
+    String displayNameFor(Class clz) = displayNameGenerator.nameForClass(clz);
 
     /**
      * A convenience method to return the display name for a
@@ -59,25 +55,19 @@ const DiscoveryConfiguration {
      *
      * @return the human readable display name for the `Class`
      */
-    String displayNameFor(Class clz, MethodOrFunction method) {
-        return displayNameGenerator.nameForMethod(clz, method);
-    }
+    String displayNameFor(Class clz, MethodOrFunction method) = displayNameGenerator.nameForMethod(clz, method);
 
     // ----- factory methods -----------------------------------------------------------------------
 
     /**
      * Create a default `DiscoveryConfiguration`.
      */
-    static DiscoveryConfiguration create() {
-        return builder().build();
-    }
+    static DiscoveryConfiguration create() = builder().build();
 
     /**
      * Create a `DiscoveryConfiguration` builder.
      */
-    static Builder builder() {
-        return new Builder();
-    }
+    static Builder builder() = new Builder();
 
     // ----- inner class: Builder ------------------------------------------------------------------
 
@@ -142,8 +132,6 @@ const DiscoveryConfiguration {
          *
          * @return a `DiscoveryConfiguration` built from this `Builder`
          */
-        DiscoveryConfiguration build() {
-            return new DiscoveryConfiguration(this);
-        }
+        DiscoveryConfiguration build() = new DiscoveryConfiguration(this);
     }
 }

@@ -1,7 +1,8 @@
 import annotations.DisplayName;
 
 /**
- * A class that can generate display names for classes and methods.
+ * A class that can generate human readable names for test classes and methods.
+ * These names will be used in console output and test reports.
  */
 interface DisplayNameGenerator
         extends Const {
@@ -43,14 +44,12 @@ interface DisplayNameGenerator
      */
     static String parameterTypesAsString(MethodOrFunction method) {
         StringBuffer buf = new StringBuffer().add('(');
-
         EachParam: for (Parameter param : method.params) {
             if (!EachParam.first) {
                 ", ".appendTo(buf);
             }
             param.appendTo(buf);
         }
-
         return buf.add(')').toString();
     }
 

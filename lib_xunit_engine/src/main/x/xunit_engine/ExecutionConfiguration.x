@@ -13,23 +13,17 @@ const ExecutionConfiguration {
     /**
      * Return this `ExecutionConfiguration` as a `Builder`.
      */
-    Builder asBuilder() {
-        return new Builder(this);
-    }
+    Builder asBuilder() = new Builder(this);
 
     /**
      * Create a default `ExecutionConfiguration`.
      */
-    static ExecutionConfiguration create() {
-        return builder().build();
-    }
+    static ExecutionConfiguration create() = builder().build();
 
     /**
      * Create an `ExecutionConfiguration` builder.
      */
-    static Builder builder() {
-        return new Builder();
-    }
+    static Builder builder() = new Builder();
 
     /**
      * An `ExecutionConfiguration` builder.
@@ -54,8 +48,6 @@ const ExecutionConfiguration {
          *
          * @return an `ExecutionConfiguration` built from this `Builder`
          */
-        ExecutionConfiguration build() {
-            return new ExecutionConfiguration(this);
-        }
+        ExecutionConfiguration build() = new ExecutionConfiguration(this);
     }
 }
