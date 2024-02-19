@@ -47,7 +47,7 @@ class TestExecutorMethodModelTest {
 
         executor.execute(ctx);
 
-        listener.forTest(model.uniqueId).assertFailedTest(Assertion);
+        listener.forTest(model.uniqueId).assertFailedTest(IllegalState);
     }
 
     @Test
@@ -225,7 +225,7 @@ class TestExecutorMethodModelTest {
 
         EngineExecutionContext ctxFinal = executor.execute(ctx, providers);
 
-        listener.forTest(model.uniqueId).assertFailedTest(Assertion);
+        listener.forTest(model.uniqueId).assertFailedTest(IllegalState);
 
         assert ctxFinal.testFixture.is(TestStub);
         TestStub stub = ctxFinal.testFixture.as(TestStub);
