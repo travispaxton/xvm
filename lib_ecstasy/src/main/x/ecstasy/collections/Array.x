@@ -93,7 +93,10 @@ class Array<Element>
 
     /**
      * Construct a fixed size array with the specified size and initial value. An initial value is
-     * always required
+     * always required; this constructor is used by the following Ecstasy syntax, which allows the
+     * compiler to supply the default value for the type automatically:
+     *
+     *     val array = new Int[5];
      *
      * @param size    the size of the fixed size array
      * @param supply  the value or the supply function for initializing the elements of the array

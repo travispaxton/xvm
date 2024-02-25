@@ -65,6 +65,12 @@ prj/
 *.ipr
 *.iws
 
+#temporary files
+*.old
+*.new
+*.bak
+*.backup
+
 # Eventually, after code reformatting and package renaming, we want an .editorconfig in the root.
 # Right now, to phase that in, we allow an .editorconfig symlink in the root pointing out another
 # not yet 100% project standard .editorconfig personal to the user, symlinked from here. Hence,
