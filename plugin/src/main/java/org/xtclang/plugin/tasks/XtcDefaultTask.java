@@ -22,7 +22,7 @@ import static org.xtclang.plugin.XtcPluginConstants.XTC_PLUGIN_VERBOSE_PROPERTY;
 // TODO: We'd like our tasks to have the same kind of extension pattern as the XtcProjectDelegate
 //   now that we have a working inheritance hierarchy no longer constrained to multiple inheritance
 //   or various Gradle APIs.
-public abstract class XtcDefaultTask extends DefaultTask {
+public abstract class XtcDefaultTask extends DefaultTask implements XtcTask {
     /**
      * Used to print only key messages with an "always" semantic. Used to quickly switch on and off,
      * or persist in the shell, a setting that is used for stuff like always printing launcher command
@@ -54,6 +54,11 @@ public abstract class XtcDefaultTask extends DefaultTask {
         return ProjectDelegate.prefix(projectName, getName());
     }
 
+    @Override
+    public void executeTask() {
+        isBeingExecuted = true;
+    }
+
     /**
      * We count everything with the log level "info" or finer as verbose logging.
      * This was at project level before, but is now at task level, so we can react and be
@@ -64,10 +69,6 @@ public abstract class XtcDefaultTask extends DefaultTask {
      */
     public boolean hasVerboseLogging() {
         return overrideVerboseLogging || ProjectDelegate.hasVerboseLogging(project);
-    }
-
-    protected void executeTask() {
-        isBeingExecuted = true;
     }
 
     @Internal
@@ -88,19 +89,19 @@ public abstract class XtcDefaultTask extends DefaultTask {
         return configData;
     }
 
-    public FileCollection filesFromConfigs(final String... configNames) {
+    public final FileCollection filesFromConfigs(final String... configNames) {
         return filesFromConfigs(false, configNames);
     }
 
-    public FileCollection filesFromConfigs(final List<String> configNames) {
+    public final FileCollection filesFromConfigs(final List<String> configNames) {
         return filesFromConfigs(false, configNames);
     }
 
-    public FileCollection filesFromConfigs(final boolean shouldBeResolved, final String... configNames) {
+    public final FileCollection filesFromConfigs(final boolean shouldBeResolved, final String... configNames) {
         return filesFromConfigs(shouldBeResolved, Arrays.asList(configNames));
     }
 
-    public FileCollection filesFromConfigs(final boolean shouldBeResolved, final List<String> configNames) {
+    public final FileCollection filesFromConfigs(final boolean shouldBeResolved, final List<String> configNames) {
         final Logger logger = project.getLogger();
         final String prefix = prefix();
         logger.info("{} Resolving filesFrom config: {}", prefix, configNames);
