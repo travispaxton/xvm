@@ -7,7 +7,6 @@
  */
 
 import de.undercouch.gradle.tasks.download.Download
-import org.gradle.language.base.plugins.LifecycleBasePlugin.BUILD_GROUP
 
 plugins {
     alias(libs.plugins.xdk.build.java)
@@ -20,8 +19,18 @@ dependencies {
     implementation(libs.javatools.utils)
 }
 
+val xtcUnicodeProducer by configurations.registering {
+    isCanBeResolved = false
+    isCanBeConsumed = true
+    outgoing.artifact(tasks.processResources)
+    attributes {
+        attribute(Category.CATEGORY_ATTRIBUTE, objects.named(Category.LIBRARY))
+        attribute(LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE, objects.named("unicodeDir"))
+    }
+}
+
 val unicodeUcdUrl = "https://unicode.org/Public/UCD/latest/ucdxml/ucd.all.flat.zip"
-val processedResourcesDir = tasks.processResources.get().outputs.files.singleFile
+//val processedResourcesDir = tasks.processResources.get().outputs.files.singleFile
 
 /**
  * Type safe "jar" task accessor.
@@ -33,8 +42,6 @@ val jar by tasks.existing(Jar::class)
  */
 val downloadUcdFlatZip by tasks.registering(Download::class) {
     onlyIf {
-        System.err.println("Check rebuildunicode spec: should be executing: ${state.executing}")
-        assert(state.executing)
         getXdkPropertyBoolean("org.xtclang.unicode.rebuild", false) // TODO inputproperty
     }
     src(unicodeUcdUrl)
@@ -61,35 +68,42 @@ val downloadUcdFlatZip by tasks.registering(Download::class) {
  * its incoming resources, which means that lib_ecstasy will include them in the ecstasy.xtc
  * module. All we need to do is add the configuration as a resource for lib_ecstasy.
  */
-val rebuildUnicodeTables by tasks.registering {
-    group = BUILD_GROUP
-    description = "If the unicode files should be regenerated, generate them from the build tool, and place them under the build resources."
 
-    val rebuildUnicode = getXdkPropertyBoolean("org.xtclang.unicode.rebuild", false)
-    logger.info("$prefix Should rebuild unicode: $rebuildUnicode")
+// processResources:
+//   If we aren't rebuilding unicode, they just copy the resources to build and add them to the xtcUnicodeProducer config.
+//   Otherwise, the
+private val rebuildUnicode =  getXdkPropertyBoolean("org.xtclang.unicode.rebuild", false)
+private val resourceOutputs = provider {
+    sourceSets.main.get().output.resourcesDir
+}
 
+val processUnicodeTables by tasks.registering {
+    outputs.dir(resourceOutputs)
     dependsOn(jar)
-    outputs.dir(processedResourcesDir)
 
-    if (rebuildUnicode) {
-        dependsOn(downloadUcdFlatZip)
-        doLast {
+    doLast {
+        if (rebuildUnicode) {
             logger.lifecycle("$prefix Rebuilding unicode tables...")
-            val unicodeJar = jar.get().archiveFile
+            val unicodeJar = jar.get().archiveFile.get().asFile // evaluates lazy values, only do if we are executing.
             val localUcdZip = downloadUcdFlatZip.get().outputs.files.singleFile
             logger.lifecycle("$prefix Downloaded unicode file: ${localUcdZip.absolutePath}")
             javaexec {
                 mainClass = "org.xvm.tool.BuildUnicodeTables"
                 classpath(configurations.runtimeClasspath)
                 classpath(unicodeJar)
-                args(localUcdZip.absolutePath, File(processedResourcesDir, "ecstasy/text"))
+                args(localUcdZip.absolutePath, File(resourceOutputs.get(), "ecstasy/text"))
             }
         }
-    }
-
-    doLast {
         printTaskInputs()
         printTaskOutputs()
         printTaskDependencies()
+    }
+}
+
+// We have correct outputs by extending the existing Jave processResources task.
+val processResources by tasks.existing {
+    inputs.properties("rebuildUnicode" to rebuildUnicode)
+    if (rebuildUnicode) {
+        dependsOn(processUnicodeTables)
     }
 }
