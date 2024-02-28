@@ -81,11 +81,16 @@ val processUnicodeTables by tasks.registering {
     outputs.dir(resourceOutputs)
     dependsOn(jar)
 
+    val unicodeJar = jar.map { it.archiveFile.get().asFile }
+    val unicodeUcdZip = downloadUcdFlatZip.map { it.outputs.files.singleFile }
+    inputs.file(unicodeJar)
+    inputs.file(unicodeUcdZip)
+    // TODO: Depend on source.
+
     doLast {
         if (rebuildUnicode) {
             logger.lifecycle("$prefix Rebuilding unicode tables...")
-            val unicodeJar = jar.get().archiveFile.get().asFile // evaluates lazy values, only do if we are executing.
-            val localUcdZip = downloadUcdFlatZip.get().outputs.files.singleFile
+            val localUcdZip = unicodeUcdZip.get()
             logger.lifecycle("$prefix Downloaded unicode file: ${localUcdZip.absolutePath}")
             javaexec {
                 mainClass = "org.xvm.tool.BuildUnicodeTables"
