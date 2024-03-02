@@ -58,6 +58,7 @@ class XdkBuildLogic private constructor(project: Project) : XdkProjectBuildLogic
         return xdkGitHub
     }
 
+    @Suppress("unused")
     fun resolveLocalXdkInstallation(): File {
         return findLocalXdkInstallation() ?: throw project.buildException("Could not find local installation of XVM.")
     }
@@ -91,10 +92,6 @@ class XdkBuildLogic private constructor(project: Project) : XdkProjectBuildLogic
             return instance
         }
 
-        fun getDateTimeStampWithTz(ms: Long = System.currentTimeMillis()): String {
-            return SimpleDateFormat(DATE_TIME_FORMAT, Locale.getDefault()).format(Date(ms))
-        }
-
         fun findExecutableOnPath(executable: String): Path? {
             return System.getenv(ENV_PATH)?.split(File.pathSeparator)?.map { File(it, executable) }
                 ?.find { it.exists() && it.canExecute() }?.toPath()?.toRealPath()
@@ -110,6 +107,7 @@ class XdkBuildLogic private constructor(project: Project) : XdkProjectBuildLogic
          * updated, and, e.g., not erroneously considered as cached or some other hard-to-debug
          * scenario like that.
          */
+        @Suppress("unused")
         fun listDirWithTimestamps(dir: File): String {
             val truncate = dir.absolutePath
             return buildString {
@@ -121,6 +119,10 @@ class XdkBuildLogic private constructor(project: Project) : XdkProjectBuildLogic
                     appendLine("    [$timestamp] '${dir.name}$path'")
                 }
             }.trim()
+        }
+
+        private fun getDateTimeStampWithTz(ms: Long = System.currentTimeMillis()): String {
+            return SimpleDateFormat(DATE_TIME_FORMAT, Locale.getDefault()).format(Date(ms))
         }
     }
 }

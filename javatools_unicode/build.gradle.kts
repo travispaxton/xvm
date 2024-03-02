@@ -21,7 +21,13 @@ dependencies {
 }
 
 val unicodeUcdUrl = "https://unicode.org/Public/UCD/latest/ucdxml/ucd.all.flat.zip"
-val processedResourcesDir = tasks.processResources.get().outputs.files.singleFile
+
+private fun shouldRebuildUnicode(): Boolean {
+    return true
+    //val rebuildUnicode = getXdkPropertyBoolean("org.xtclang.unicode.rebuild", false)
+    //logger.lifecycle("$prefix Should rebuild unicode: $rebuildUnicode")
+    //return rebuildUnicode
+}
 
 /**
  * Type safe "jar" task accessor.
@@ -33,15 +39,19 @@ val jar by tasks.existing(Jar::class)
  */
 val downloadUcdFlatZip by tasks.registering(Download::class) {
     onlyIf {
-        System.err.println("Check rebuildunicode spec: should be executing: ${state.executing}")
-        assert(state.executing)
-        getXdkPropertyBoolean("org.xtclang.unicode.rebuild", false) // TODO inputproperty
+        shouldRebuildUnicode()
     }
     src(unicodeUcdUrl)
     overwrite(false)
     onlyIfModified(true)
     quiet(false)
     dest(project.mkdir(project.layout.buildDirectory.dir("ucd")))
+
+    doLast {
+        printTaskInputs()
+        printTaskOutputs()
+        printTaskDependencies()
+    }
 }
 
 /**
@@ -65,24 +75,43 @@ val rebuildUnicodeTables by tasks.registering {
     group = BUILD_GROUP
     description = "If the unicode files should be regenerated, generate them from the build tool, and place them under the build resources."
 
-    val rebuildUnicode = getXdkPropertyBoolean("org.xtclang.unicode.rebuild", false)
-    logger.info("$prefix Should rebuild unicode: $rebuildUnicode")
+    val rebuildUnicode = shouldRebuildUnicode()
 
-    dependsOn(jar)
-    outputs.dir(processedResourcesDir)
+    dependsOn(tasks.classes)
+    dependsOn(downloadUcdFlatZip) // has its own onlyIf, and should not run its execution phase if we should not build unicode.
+
+    onlyIf {
+        rebuildUnicode
+    }
+
+    val localUcdZip = downloadUcdFlatZip.map { it.outputs.files.singleFile }
+    val unicodeOutputDir = layout.buildDirectory.dir("ecstasy/text")
+
+    inputs.files(localUcdZip)
+    outputs.dir(unicodeOutputDir)
+
+    //val processResourceDir = tasks.processResources.map { it.outputs.files.singleFile }
+
+    //outputs.dir(tasks.processResources.map { it.outputs.files.singleFile })
 
     if (rebuildUnicode) {
-        dependsOn(downloadUcdFlatZip)
         doLast {
             logger.lifecycle("$prefix Rebuilding unicode tables...")
-            val unicodeJar = jar.get().archiveFile
-            val localUcdZip = downloadUcdFlatZip.get().outputs.files.singleFile
-            logger.lifecycle("$prefix Downloaded unicode file: ${localUcdZip.absolutePath}")
+            //val resolvedJar = jar.get().archiveFile
+            val resolvedZip = localUcdZip.get()
+            logger.lifecycle("$prefix Downloaded unicode file: ${resolvedZip.absolutePath}")
             javaexec {
+/*                debugOptions {
+                    enabled = true
+                    server = true
+                    port = 4711
+                    suspend = true
+                }*/
                 mainClass = "org.xvm.tool.BuildUnicodeTables"
-                classpath(configurations.runtimeClasspath)
-                classpath(unicodeJar)
-                args(localUcdZip.absolutePath, File(processedResourcesDir, "ecstasy/text"))
+                classpath(sourceSets.main.get().runtimeClasspath)
+                //classpath(configurations.runtimeClasspath) // We should really just be able to use the classes, I think?
+                // Args: ucd zip file, and an optional destination directory
+                args(localUcdZip.get(), unicodeOutputDir.get().asFile)
             }
         }
     }

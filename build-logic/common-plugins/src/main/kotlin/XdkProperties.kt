@@ -89,7 +89,7 @@ class XdkPropertiesImpl(project: Project): XdkProjectBuildLogic(project), XdkPro
             } ?: throw project.buildException("ERROR: XdkProperty '$key' has no value, and no default was given.")
         }
 
-        // First check a system env override
+        // 1) Check if we have a system environment variable overriding the property.
         val envKey = toSystemEnvKey(key)
         val envValue = System.getenv(envKey)
         if (envValue != null) {
@@ -97,12 +97,25 @@ class XdkPropertiesImpl(project: Project): XdkProjectBuildLogic(project), XdkPro
             return envValue.toString()
         }
 
+        // 2) Check if we have a Gradle property override. This should work for both Gradle style
+        //    global property overrides like ORG_GRADLE_PROJECT_propertyWithUnmodifiedName=... as
+        //    well as findProperty return values.
+        val gradleEnvKey = "ORG_GRADLE_PROJECT_$key"
+        val gradlePropValue = project.findProperty(key)
+        if (gradlePropValue != null) {
+            logger.info("$prefix XdkProperties; resolved Java System property '$key' (${gradleEnvKey}).")
+            return gradlePropValue.toString()
+        }
+
+        // 3) Check if we have a Java system property override.
         val sysPropValue = System.getProperty(key)
         if (sysPropValue != null) {
             logger.info("$prefix XdkProperties; resolved Java System property '$key'.")
             return sysPropValue.toString()
         }
 
+        // 4) Finally check if we have the Gradle property defined in this project or its
+        //    associated properties file(s).
         logger.info("$prefix XdkProperties; resolved property '$key' from properties table.")
         return properties[key]!!.toString()
     }

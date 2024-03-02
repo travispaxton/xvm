@@ -10,6 +10,8 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.StringReader;
 
+import java.net.URL;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -19,7 +21,6 @@ import java.util.zip.ZipFile;
 
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
-import javax.xml.bind.Unmarshaller;
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlAttribute;
@@ -35,31 +36,43 @@ import org.xvm.util.ConstOrdinalList;
  * used by the Char class.
  */
 public class BuildUnicodeTables {
-    public static final boolean TEST = false;
+    public static final boolean TEST = Boolean.parseBoolean(System.getenv().getOrDefault("UNICODE_TEST", null));
+
+    private static final String TEST_RESOURCE_XML = "test.xml";
 
     private static final String UCD_ALL_FLAT_ZIP = "ucd.all.flat.zip";
     private static final String UCD_ALL_FLAT_XML = "ucd.all.flat.xml";
     private static final File OUTPUT_DIR = new File("./build/resources/unicode/");
+
     private static final int BUF_SIZE = 256;
     private static final long MB = 1024L * 1024L;
     private static final long GB = MB * 1024L;
 
-    private final String[] asArgs;
+    private final File destinationDir;
+    private final File ucdZipFile;
 
     /**
-     * @param asArgs the Launcher's command-line arguments
+     * Build unicode tables based on the downloaded ucd zip file.
+     *
+     * @param ucdZipFile mandatory path to ucd zip file (created by download task or taken from Gradle cache)
      */
-    public BuildUnicodeTables(final String[] asArgs) {
-        this.asArgs = asArgs;
+    @SuppressWarnings("unused")
+    public BuildUnicodeTables(final File ucdZipFile) {
+        this(ucdZipFile, OUTPUT_DIR);
+    }
+
+    public BuildUnicodeTables(final File ucdZipFile, final File destinationDir) {
+        this.ucdZipFile = requireNonNull(ucdZipFile);
+        this.destinationDir = destinationDir;
     }
 
     /**
      * Entry point from the OS.
      *
-     * @param asArgs command line arguments
+     * @param args command line arguments
      */
-    public static void main(final String[] asArgs) throws IOException, JAXBException {
-        new BuildUnicodeTables(asArgs).run();
+    public static void main(final String[] args) throws IOException, JAXBException {
+        new BuildUnicodeTables(args.length > 0 ? new File(args[0]) : null, args.length > 1 ? new File(args[1]) : null).run();
     }
 
     /**
@@ -67,51 +80,46 @@ public class BuildUnicodeTables {
      */
     public void run() throws IOException, JAXBException {
         out("Locating Unicode raw data ...");
-        final List<CharData> listRaw = loadData();
 
-        int nHigh = -1;
-        for (final CharData cd : listRaw) {
-            final int n = cd.lastIndex();
-            if (n > nHigh) {
-                nHigh = n;
-            }
-        }
+        final var listRaw = loadData();
+        final int nHigh = listRaw.stream().mapToInt(CharData::lastIndex).max().orElse(-1);
         final int cAll = nHigh + 1;
 
         out("Processing Unicode codepoints 0.." + nHigh);
 
-        // various data collections
+        // Various data collections
         final int[] cats = new int[cAll];
         Arrays.fill(cats, new CharData().cat());
-        // String[] labels = new String[cAll];
+
         final int[] decs = new int[cAll];
-        //CHECKSTYLE:OFF
         Arrays.fill(decs, 10); // 10 is illegal; use as "null"
-        //CHECKSTYLE:ON
-        final String[] nums = new String[cAll];
-        final int[] cccs = new int[cAll];
-        Arrays.fill(cccs, 255); // 255 is illegal; use as "null"
+
+        final int[] cccs   = new int[cAll];
         final int[] lowers = new int[cAll];
         final int[] uppers = new int[cAll];
         final int[] titles = new int[cAll];
-        final String[] blocks = new String[cAll];
 
-        for (final CharData cd : listRaw) {
-            for (int codepoint = cd.firstIndex(), iLast = cd.lastIndex(); codepoint <= iLast; ++codepoint) {
-                cats[codepoint] = cd.cat();
-                // labels[codepoint] = cd.label();
-                decs[codepoint] = cd.dec();
-                nums[codepoint] = cd.num();
-                cccs[codepoint] = cd.combo();
-                lowers[codepoint] = cd.lower();
-                uppers[codepoint] = cd.upper();
-                titles[codepoint] = cd.title();
-                blocks[codepoint] = cd.block();
+        Arrays.fill(cccs, 255); // 255 is illegal; use as "null"
+
+        final String[] blocks = new String[cAll];
+        final String[] nums   = new String[cAll];
+
+        listRaw.forEach(cd -> {
+            final int first = cd.firstIndex();
+            final int last  = cd.lastIndex();
+            for (int i = first; i <= last; i++) {
+                cats[i]   = cd.cat();
+                decs[i]   = cd.dec();
+                nums[i]   = cd.num();
+                cccs[i]   = cd.combo();
+                lowers[i] = cd.lower();
+                uppers[i] = cd.upper();
+                titles[i] = cd.title();
+                blocks[i] = cd.block();
             }
-        }
+        });
 
         writeResult("Cats", cats);
-        // writeResult("Labels", labels);
         writeResult("Decs", decs);
         writeResult("Nums", nums);
         writeResult("CCCs", cccs);
@@ -122,40 +130,37 @@ public class BuildUnicodeTables {
     }
 
     public List<CharData> loadData() throws IOException, JAXBException {
-        final String sXML;
         if (TEST) {
-            sXML = loadDataTest();
-        } else {
-            final var zip = getZipFile();
-            final ZipEntry entryXML = zip.getEntry(UCD_ALL_FLAT_XML);
-            final long lRawLen = entryXML.getSize();
-            assert 2 * GB > lRawLen;
-
-            final int cbRaw = (int)lRawLen;
-            final byte[] abRaw = new byte[cbRaw];
-            try (var in = zip.getInputStream(entryXML)) {
-                final int cbActual = in.readNBytes(abRaw, 0, cbRaw);
-                assert cbActual == cbRaw;
-                sXML = new String(abRaw);
-            }
+            return getRepertoire(loadDataTest());
         }
 
-        final JAXBContext jaxbContext = JAXBContext.newInstance(UCDData.class);
-        final Unmarshaller jaxbUnmarshaller = jaxbContext.createUnmarshaller();
-        final UCDData data = (UCDData)jaxbUnmarshaller.unmarshal(new StringReader(sXML));
+        final var zip = getZipFile();
+        final ZipEntry entryXML = zip.getEntry(UCD_ALL_FLAT_XML);
+        final long lRawLen = entryXML.getSize();
+        assert 2 * GB > lRawLen;
+
+        final int cbRaw = (int)lRawLen;
+        final byte[] abRaw = new byte[cbRaw];
+        try (var in = zip.getInputStream(entryXML)) {
+            final int cbActual = in.readNBytes(abRaw, 0, cbRaw);
+            assert cbActual == cbRaw;
+            return getRepertoire(new String(abRaw));
+        }
+    }
+
+    private static List<CharData> getRepertoire(final String xml) throws JAXBException {
+        final var jaxbUnmarshaller = JAXBContext.newInstance(UCDData.class).createUnmarshaller();
+        final var data = (UCDData)jaxbUnmarshaller.unmarshal(new StringReader(xml));
         return data.repertoire;
     }
 
     private static String loadDataTest() throws IOException {
-        final String sXML;
-        final ClassLoader loader = requireNonNullElseGet(BuildUnicodeTables.class.getClassLoader(), ClassLoader::getSystemClassLoader);
-        final String sFile = requireNonNull(loader.getResource("test.xml")).getFile();
-        final File file = new File(sFile);
-        assert file.exists();
-        assert file.isFile();
-        assert file.canRead();
-
+        final var loader = requireNonNullElseGet(
+                BuildUnicodeTables.class.getClassLoader(),
+                ClassLoader::getSystemClassLoader);
+        final var file = readableFile(requireNonNull(loader.getResource(TEST_RESOURCE_XML)));
         final long lRawLen = file.length();
+
         assert 2 * GB > lRawLen;
 
         final int cbRaw = (int)lRawLen;
@@ -163,57 +168,55 @@ public class BuildUnicodeTables {
         try (var in = new FileInputStream(file)) {
             final int cbActual = in.readNBytes(abRaw, 0, cbRaw);
             assert cbActual == cbRaw;
-            sXML = new String(abRaw);
         }
-        return sXML;
+
+        return new String(abRaw);
     }
 
-    private File resolveArgumentAsFile() {
-        if (0 < asArgs.length) {
-            final File ucdZip = new File(asArgs[0]);
-            out(getClass().getSimpleName() + " UCD zip file: " + ucdZip.getAbsolutePath());
-            return ucdZip;
-        }
-        return null;
+    private static File readableFile(final URL url) {
+        return checkReadable(new File(url.getFile()));
     }
 
-    private File resolveArgumentAsDestinationDir() {
-        if (1 < asArgs.length) {
-            final File destDir = new File(asArgs[1]);
-            out(getClass().getSimpleName() + " destination directory: " + destDir.getAbsolutePath());
-            return destDir;
-        }
-        return OUTPUT_DIR;
+    private static File checkReadable(final File file) {
+        assert isReadable(file) : file;
+        return file;
+    }
+
+    private static boolean isReadable(final File file) {
+        return file.isFile() && file.canRead();
     }
 
     private ZipFile getZipFile() throws IOException {
-        final var file = requireNonNullElseGet(resolveArgumentAsFile(), () -> new File(UCD_ALL_FLAT_ZIP));
-        if (!(file.exists() && file.isFile() && file.canRead())) {
-            final ClassLoader loader = requireNonNullElseGet(BuildUnicodeTables.class.getClassLoader(), ClassLoader::getSystemClassLoader);
+        final var file = requireNonNullElseGet(ucdZipFile, () -> new File(UCD_ALL_FLAT_ZIP));
+
+        if (!isReadable(file)) {
+            final var loader   = requireNonNullElseGet(BuildUnicodeTables.class.getClassLoader(), ClassLoader::getSystemClassLoader);
             final var resource = loader.getResource(UCD_ALL_FLAT_ZIP);
-            if (null == resource) {
+            if (resource == null) {
                 throw new IOException("Cannot find resources for unicode file: " + UCD_ALL_FLAT_ZIP);
             }
             return new ZipFile(resource.getFile());
         }
+
         out("Reverting to zip file: " + file.getAbsolutePath());
         return new ZipFile(file);
     }
 
-    void writeResult(final String name, final String[] array) throws IOException {
-        // collect and sort the values
+    private void writeResult(final String name, final String[] array) throws IOException {
+        // Collect and sort the values
         final var map = new TreeMap<String, Integer>();
-        final int c = array.length;
+        // TODO use Collectors.toMap here instead of hte hard to read compute lambda
+        Arrays.stream(array).filter(BuildUnicodeTables::isNotEmpty).forEach(s -> map.compute(s, (k, v) -> (v == null ? 0 : v) + 1));
         for (final var s : array) {
-            if (null != s) {
+            if (s != null) {
                 assert !s.isEmpty();
-                map.compute(s, (k, v) -> (null == v ? 0 : v) + 1);
+                map.compute(s, (k, v) -> (v == null ? 0 : v) + 1);
             }
         }
 
-        final var sb = new StringBuilder();
-        sb.append(name)
-                .append(": [index] \"str\" (freq) \n--------------------");
+        final var sb = new StringBuilder(name);
+        sb.append(": [index] \"str\" (freq) \n--------------------");
+
         int index = 0;
         for (final var entry : map.entrySet()) {
             sb.append("\n[")
@@ -226,37 +229,27 @@ public class BuildUnicodeTables {
         }
 
         final int indexNull = index;
-        sb.append("\n\ndefault=").append(indexNull);
+        sb.append("\n\ndefault=")
+                .append(indexNull);
 
         writeDetails(name, sb.toString());
 
         // assign indexes to each
-        final int[] an = new int[c];
-        for (int i = 0; i < c; ++i) {
+        final int[] an = new int[array.length];
+        for (int i = 0; i < an.length; i++) {
             final String s = array[i];
             an[i] = null == s ? indexNull : map.get(s);
         }
-
         writeResult(name, an);
     }
 
-    void writeResult(final String name, final int[] array) throws IOException {
-        //        if (name.equals("Cats"))
-        //            {
-        //            out("cats:");
-        //            for (int i = 0; i < 128; ++i)
-        //                {
-        //                out("[" + i + "]=" + array[i]);
-        //                }
-        //            }
-
+    private void writeResult(final String name, final int[] array) throws IOException {
         writeResult(name, ConstOrdinalList.compress(array, BUF_SIZE));
-
     }
 
     private File resolveOutput(final String name, final String extension) throws IOException {
         final var filename = "Char" + name + '.' + extension;
-        final var dir = resolveArgumentAsDestinationDir();
+        final var dir = destinationDir;
         if (!dir.exists() && !dir.mkdirs()) {
             throw new IOException("Could not access or create dir: '" + dir.getAbsolutePath() + '\'');
         }
@@ -264,32 +257,40 @@ public class BuildUnicodeTables {
         return new File(dir, filename);
     }
 
-    void writeResult(final String name, final byte[] data) throws IOException {
+    private void writeResult(final String name, final byte[] data) throws IOException {
+        out("writeResult " + name);
         try (var out = new FileOutputStream(resolveOutput(name, "dat"))) {
             out.write(data);
         }
     }
 
-    void writeDetails(final String name, final String details) throws IOException {
+    private void writeDetails(final String name, final String details) throws IOException {
+        out("writeResult " + name);
         try (var out = new FileWriter(resolveOutput(name, "txt"))) {
             out.write(details);
         }
     }
 
-    // ----- helpers -------------------------------------------------------------------------------
+    private static boolean isNullOrEmpty(final String str) {
+        return str == null || str.isEmpty();
+    }
+
+    private static boolean isNotEmpty(final String str) {
+        return !isNullOrEmpty(str);
+    }
 
     /**
-     * Print a blank line to the terminal.
+     * Log a blank line
      */
     public static void out() {
         out("");
     }
 
     /**
-     * Print the String value of some object to the terminal.
+     * Log the String value of some object to the terminal.
      */
     public static void out(final Object o) {
-        System.out.println(o);
+        System.out.println(BuildUnicodeTables.class.getSimpleName() + ": " + o);
     }
 
     /**
@@ -304,44 +305,48 @@ public class BuildUnicodeTables {
      * Print the String value of some object to the terminal.
      */
     public static void err(final Object o) {
-        System.err.println(o);
+        System.err.println(BuildUnicodeTables.class.getSimpleName() + ": " + o);
     }
 
-    // ----- inner classes -------------------------------------------------------------------------
-
+    /**
+     * UCDData is a simple data class for the JAXB parser.
+     */
     @XmlRootElement(name = "ucd")
     @XmlAccessorType(XmlAccessType.FIELD)
     public static class UCDData {
         @XmlElement
         public String description;
 
-        //              @XmlElement(name="group"       ), // note: none present in Unicode 13 data
-        @XmlElements({ @XmlElement(name = "char"), @XmlElement(name = "noncharacter"), @XmlElement(name = "surrogate"), @XmlElement(name = "reserved") })
+        @XmlElements({
+                @XmlElement(name = "char"),
+                @XmlElement(name = "noncharacter"),
+                @XmlElement(name = "surrogate"),
+                @XmlElement(name = "reserved")})
         @XmlElementWrapper
         public List<CharData> repertoire = new ArrayList<>();
 
         @Override
         public String toString() {
-            final var sb = new StringBuilder();
-            sb.append("UCD description=")
+            final var sb = new StringBuilder("UCD description=")
                     .append(description)
                     .append(", repertoire=\n");
-
             int c = 0;
             for (final var item : repertoire) {
-                if (BUF_SIZE < c) {
+                if (c > BUF_SIZE) {
                     sb.append(",\n...");
                     break;
-                } else if (0 < c++) {
+                } else if (c++ > 0) {
                     sb.append(",\n");
                 }
-
                 sb.append(item);
             }
             return sb.toString();
         }
     }
 
+    /**
+     * CharData is a simple data class for the JAXB parser.
+     */
     @XmlAccessorType(XmlAccessType.FIELD)
     public static class CharData {
         @XmlAttribute(name = "cp")
@@ -421,11 +426,11 @@ public class BuildUnicodeTables {
         }
 
         int firstIndex() {
-            return null == codepoint || codepoint.isEmpty() ? Integer.parseInt(codepointStart, 16) : Integer.parseInt(codepoint, 16);
+            return isNullOrEmpty(codepoint) ? Integer.parseInt(codepointStart, 16) : Integer.parseInt(codepoint, 16);
         }
 
         int lastIndex() {
-            return null == codepoint || codepoint.isEmpty() ? Integer.parseInt(codepointEnd, 16) : Integer.parseInt(codepoint, 16);
+            return isNullOrEmpty(codepoint) ? Integer.parseInt(codepointEnd, 16) : Integer.parseInt(codepoint, 16);
         }
 
         int dec() {
@@ -440,47 +445,44 @@ public class BuildUnicodeTables {
         }
 
         String num() {
-            return null == nt || nt.isEmpty() || "None".equals(nt) || null == nv || nv.isEmpty() || "NaN".equals(nv) ? null : nv;
+            return isNullOrEmpty(nt) || "None".equals(nt) || isNullOrEmpty(nv) || "NaN".equals(nv) ? null : nv;
         }
 
         int combo() {
-            return null == ccc || ccc.isEmpty() ? 255 : Integer.parseInt(ccc);
+            return isNullOrEmpty(ccc) ? 255 : Integer.parseInt(ccc);
         }
 
         int lower() {
-            return null == slc || slc.isEmpty() || "#".equals(slc) ? 0 : Integer.parseInt(slc, 16);
+            return isNullOrEmpty(slc) || "#".equals(slc) ? 0 : Integer.parseInt(slc, 16);
         }
 
         int upper() {
-            return null == suc || suc.isEmpty() || "#".equals(suc) ? 0 : Integer.parseInt(suc, 16);
+            return isNullOrEmpty(suc) || "#".equals(suc) ? 0 : Integer.parseInt(suc, 16);
         }
 
         int title() {
-            return null == stc || stc.isEmpty() || "#".equals(stc) ? 0 : Integer.parseInt(stc, 16);
+            return isNullOrEmpty(stc) || "#".equals(stc) ? 0 : Integer.parseInt(stc, 16);
         }
 
         String block() {
-            return null == blk || blk.isEmpty() ? null : blk;
+            return isNullOrEmpty(blk) ? null : blk;
         }
 
         @Override
         public String toString() {
             return getClass().getSimpleName().toLowerCase()
                 + " codepoint="
-                + (null == codepoint || codepoint.isEmpty() ? codepointStart + ".." + codepointEnd : codepoint)
-                + (null != name && !name.isEmpty()
-                ? ", name=\"" + name + "\"" : "") + ", gen-cat=" + gc + (null != blk && !blk.isEmpty()
-                ? ", block=\"" + blk + "\"" : "") + (null != nt && !nt.isEmpty() && !"None".equals(nt)
-                ? ", num-type=\"" + nt + "\"" : "") + (null != nv && !nv.isEmpty() && !"NaN".equals(nv)
-                ? ", num-val=\"" + nv + "\"" : "") + (null == suc || suc.isEmpty() || "#".equals(suc)
-                ? "" : ", suc=" + suc) + (null == slc || slc.isEmpty() || "#".equals(slc) ? "" : ", slc=" + slc)
+                + (codepoint == null || codepoint.isEmpty()
+                    ? codepointStart + ".." + codepointEnd
+                    : codepoint)
+                + (name != null && !name.isEmpty()
+                    ? ", name=\"" + name + "\"" : "") + ", gen-cat=" + gc + (null != blk && !blk.isEmpty()
+                    ? ", block=\"" + blk + "\"" : "") + (nt != null && !nt.isEmpty() && !"None".equals(nt)
+                    ? ", num-type=\"" + nt + "\"" : "") + (nv != null && !nv.isEmpty() && !"NaN".equals(nv)
+                    ? ", num-val=\"" + nv + "\"" : "") + (suc == null || suc.isEmpty() || "#".equals(suc)
+                    ? "" : ", suc=" + suc)
+                + (slc == null || slc.isEmpty() || "#".equals(slc) ? "" : ", slc=" + slc)
                 + (null == stc || stc.isEmpty() || "#".equals(stc) ? "" : ", stc=" + stc);
-            //   + (bidiClass != null && bidiClass.length() > 0 ? ", bidiClass=\"" + bidiClass + "\"" : "")
-            //   + (bidiMirrored != null && bidiMirrored.equals("Y") ? ", bidiMirrored=\"" + bidiMirrored + "\"" : "")
-            //   + (bidiMirrorImage != null && bidiMirrorImage.length() > 0 ? ", bidiMirrorImage=\"" + bidiMirrorImage + "\"" : "")
-            //   + (bidiControl != null && bidiControl.equals("Y") ? ", bidiControl=\"" + bidiControl + "\"" : "")
-            //   + (bidiPairedBracketType != null && bidiPairedBracketType.length() > 0 ? ", bidiPairedBracketType=\"" + bidiPairedBracketType + "\"" : "")
-            //   + (bidiPairedBracket != null && bidiPairedBracket.length() > 0 ? ", bidiPairedBracket=\"" + bidiPairedBracket + "\"" : "")
         }
     }
 }
