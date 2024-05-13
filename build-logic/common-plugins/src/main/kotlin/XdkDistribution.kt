@@ -2,6 +2,7 @@ import org.gradle.api.Project
 import org.gradle.api.Task
 import org.gradle.api.file.Directory
 import org.gradle.api.file.RegularFile
+import org.gradle.api.logging.Logger
 import org.gradle.api.provider.Provider
 import org.gradle.api.publish.PublishingExtension
 import org.gradle.api.publish.maven.MavenPublication
@@ -11,6 +12,7 @@ import org.gradle.kotlin.dsl.withType
 import org.gradle.plugins.signing.Sign
 import org.gradle.plugins.signing.SigningExtension
 import java.io.File
+import java.net.URI
 
 /**
  * Configure all maven publications with some mandatory and helpful information.
@@ -22,6 +24,10 @@ fun PublishingExtension.configureMavenPublications(project: Project) = project.r
     publications.withType<MavenPublication>().configureEach {
         logger.info("$prefix Configuring publication '$name' for project '${project.name}'.")
         pom {
+            name = project.name
+            description = "xtclang.org $name"
+            inceptionYear = "2024"
+            packaging = "jar"
             licenses {
                 license {
                     name = "The XDK License"
@@ -88,6 +94,19 @@ fun SigningExtension.mavenCentralSigning(): List<Sign> = project.run {
     }
 }
 
+// Configure a local repo under build for maven artifacts. This is required to be the
+// staging-deploy repo for a mavenCentral release.
+fun PublishingExtension.mavenLocalStagingDeploy(project: Project) = project.run {
+    val localStagingRepoPath = localStagingRepoDirectory.map { it.asFile.absolutePath }
+    repositories {
+        maven {
+            name = "LocalStaging"
+            url = uri(localStagingRepoPath) //localStagingRepoDirectory.map { it.asFile.absolutePath })
+            logger.info("$prefix Created locals stating repository for project '${project.name}': ${localStagingRepoPath}}.")
+        }
+    }
+}
+
 /**
  * Add resolution logic for the GitHub maven package repository. We use that to keep
  * SNAPSHOT publications after every commit to master (optionally to another branch, if
@@ -95,22 +114,21 @@ fun SigningExtension.mavenCentralSigning(): List<Sign> = project.run {
  * cannot resolve credentials from GITHUB_TOKEN or the xtclang properties from any
  * property file.
  */
-fun PublishingExtension.mavenGitHubPackages(project: Project): Boolean = project.run {
-    val gitHubToken = project.getXtclangGitHubMavenPackageRepositoryToken()
+fun PublishingExtension.mavenGitHubPackages(gitHubToken: String): Boolean { //}: Project): Boolean = project.run {
     if (gitHubToken.isEmpty()) {
-        logger.warn("$prefix WARNING: No GitHub token found, either in config or environment. publishRemote won't work.")
+        System.err.println("No github token is present.")
         return false
     }
 
     repositories {
         maven {
             name = "GitHub"
-            url = uri("https://maven.pkg.github.com/xtclang/xvm")
+            url = URI("https://maven.pkg.github.com/xtclang/xvm")
             credentials {
                 username = "xtclang-bot"
                 password = gitHubToken
             }
-            logger.info("$prefix Configured '$name' package repository for project '${project.name}'.")
+            //logger.info("$prefix Configured '$name' package repository for project '${project.name}'.")
         }
     }
 
@@ -129,13 +147,28 @@ class XdkDistribution(project: Project): XdkProjectBuildLogic(project) {
 
         private const val CI = "CI"
 
+        val currentOs = OperatingSystem.current()
         val isCiEnabled = System.getenv(CI) == "true"
-        val currentOs: OperatingSystem = OperatingSystem.current()
         val distributionTasks = listOf("distTar", "distZip", "withLaunchersDistTar", "withLaunchersDistZip")
         val binaryLauncherNames = listOf("xcc", "xec")
 
         fun isDistributionArchiveTask(task: Task): Boolean {
             return task.group == DISTRIBUTION_TASK_GROUP && task.name in distributionTasks
+        }
+
+        fun osClassifier(): String {
+            val arch = when (val systemArch = System.getProperty("os.arch")) {
+                "amd64" -> "x86_64"
+                "aarch64" -> if (currentOs.isMacOsX) "x86_64" else systemArch // We have universal binary support, so treat aarch64 as x86_64 to lower JReleaser complexity.
+                else -> systemArch
+            }
+
+            return when {
+                currentOs.isMacOsX -> "osx-$arch"
+                currentOs.isLinux -> "linux-$arch"
+                currentOs.isWindows -> "windows-$arch"
+                else -> throw UnsupportedOperationException("Cannot resolve distribution for current OS: '$currentOs'")
+            }
         }
     }
 
@@ -155,9 +188,7 @@ class XdkDistribution(project: Project): XdkProjectBuildLogic(project) {
     val distributionName: String get() = project.name // Default: "xdk"
 
     @Suppress("MemberVisibilityCanBePrivate") // No it can't, IntelliJ
-    val distributionVersion: String get() = buildString {
-        append(project.version)
-    }
+    val distributionVersion: String get() = project.version.toString()
 
     fun configScriptFilename(installDir: Provider<Directory>): RegularFile {
         val config = if (currentOs.isMacOsX) {
@@ -182,23 +213,6 @@ class XdkDistribution(project: Project): XdkProjectBuildLogic(project) {
             "windows_launcher.exe"
         } else {
             throw UnsupportedOperationException("Cannot build distribution for currentOs: $currentOs")
-        }
-    }
-
-    fun resolveLauncherFile(dir: Provider<Directory>): RegularFile {
-        return dir.get().file("bin/${launcherFileName()}")
-    }
-
-    /*
-     * Helper for jreleaser etc.
-     */
-    fun osClassifier(): String {
-        val arch = System.getProperty("os.arch")
-        return when {
-            currentOs.isMacOsX -> "macos_$arch"
-            currentOs.isLinux -> "linux_$arch"
-            currentOs.isWindows -> "windows_$arch"
-            else -> throw UnsupportedOperationException("Cannot build distribution for currentOs: $currentOs")
         }
     }
 

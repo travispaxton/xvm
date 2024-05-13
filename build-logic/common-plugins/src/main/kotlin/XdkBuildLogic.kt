@@ -98,7 +98,7 @@ val Project.compositeRootBuildDirectory: DirectoryProperty get() = gradle.rootLa
 
 val Project.userInitScriptDirectory: File get() = File(gradle.gradleUserHomeDir, "init.d")
 
-val Project.buildRepoDirectory get() = compositeRootBuildDirectory.dir("repo")
+val Project.localStagingRepoDirectory get() = compositeRootBuildDirectory.dir("repo-staging")
 
 val Project.xdkBuildLogic: XdkBuildLogic get() = XdkBuildLogic.instanceFor(this)
 
@@ -170,7 +170,7 @@ fun Task.considerNeverUpToDate() {
  * Extension method to flag a task as always up to date. Declaring no outputs will
  * cause a task to rerun, even an extended task.
  */
-fun Task.considerAlwaqysUpToDate() {
+fun Task.considerAlwaysUpToDate() {
     outputs.upToDateWhen { true }
 }
 
