@@ -24,9 +24,9 @@ tasktree = "2.1.1"
 gradle-portal-publish = "1.2.1"
 sonatype-publish = "2.0.0"
 jakarta = "2.3.2"
-jline="3.25.1"
+jline = "3.25.1"
 ktlint = "12.1.1"
-jreleaser = "1.13.0-SNAPSHOT"
+jreleaser = "1.13.1"
 #jreleaser = "1.12.0"
 kordamp = "1.11.0"
 
@@ -45,6 +45,8 @@ gradle-portal-publish = { id = "com.gradle.plugin-publish", version.ref = "gradl
 ktlint = { id = "org.jlleitschuh.gradle.ktlint", version.ref = "ktlint" }
 jreleaser = { id = "org.jreleaser", version.ref = "jreleaser" }
 license-report = { id = "com.github.jk1.dependency-license-report", version = "2.8" }
+native-build = { id = "org.graalvm.buildtools.native", version = "0.10.2" }
+
 
 [libraries]
 xdk = { group = "org.xtclang", name = "xdk", version.ref = "xdk" }

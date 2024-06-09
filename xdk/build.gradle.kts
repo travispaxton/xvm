@@ -8,9 +8,11 @@ import org.gradle.api.publish.plugins.PublishingPlugin.PUBLISH_TASK_GROUP
 import org.jreleaser.gradle.plugin.tasks.AbstractJReleaserTask
 import org.jreleaser.gradle.plugin.tasks.JReleaserConfigTask
 import org.jreleaser.model.Active
+import org.jreleaser.model.Active.ALWAYS
+import org.jreleaser.model.Distribution.DistributionType.BINARY
 import org.jreleaser.model.Http.Authorization
+import org.jreleaser.model.Stereotype
 import org.xtclang.plugin.tasks.XtcCompileTask
-import java.io.File
 
 /**
  * XDK root project, collecting the lib_* xdk builds as includes, not includedBuilds ATM,
@@ -208,11 +210,13 @@ val ensureTags by tasks.registering {
     }
     doLast {
         val snapshotOnly = snapshotOnly()
-        logger.lifecycle("""
+        logger.lifecycle(
+            """
             $prefix Ensuring that the current commit is tagged with version.
             $prefix     version: $semanticVersion
             $prefix     snapshotOnly: $snapshotOnly
-        """.trimIndent())
+        """.trimIndent()
+        )
         val tag = xdkBuildLogic.gitHubProtocol().ensureTags(snapshotOnly)
         if (GitHubProtocol.tagCreated(tag)) {
             logger.lifecycle("$prefix Created or updated tag '$tag' for version: '$semanticVersion'")
@@ -225,14 +229,14 @@ val writeVersionFile by tasks.registering {
     description = "Write XDK version file to build directory (VERSION)."
     val versionFile = layout.buildDirectory.file("VERSION")
     outputs.file(versionFile)
-/*    doLast {
-        val contents = buildString {
-            val (branch, commit) = xdkBuildLogic.gitHubProtocol().resolveBranch()
-            appendLine(semanticVersion)
-            appendLine("branch: $branch:$commit")
-        }
-        versionFile.get().asFile.writeText(contents)
-    }*/
+    /*    doLast {
+            val contents = buildString {
+                val (branch, commit) = xdkBuildLogic.gitHubProtocol().resolveBranch()
+                appendLine(semanticVersion)
+                appendLine("branch: $branch:$commit")
+            }
+            versionFile.get().asFile.writeText(contents)
+        }*/
 }
 
 /**
@@ -326,7 +330,6 @@ val platformZip: Provider<RegularFile> = withLaunchersDistZip.flatMap { it.archi
 // Build everything in github workflows instead
 
 
-
 /**
  * Functionality wanted:
  *
@@ -370,12 +373,17 @@ val deploy by tasks.registering {
 }
 
 jreleaser {
-    val snapshotTag = "snapshot/v{{projectVersionMajor}}.{{projectVersionMinor}}.{{projectVersionPatch}}"
-    val releaseTag = "v/{{projectVersionMajor}}.{{projectVersionMinor}}.{{projectVersionPatch}}"
-    val tag = if (isSnapshot()) "early-access" else releaseTag
-
     //dryrun = true
     gitRootSearch = true
+
+    // TODO: Command line argument: --select-current-platform, or --select-platform osx-aarch_64
+    val releaseTag = "v{{projectVersionMajor}}.{{projectVersionMinor}}.{{projectVersionPatch}}"
+    val snapshotTag = "snapshot/$releaseTag" // TODO: "early-access" for all snapshots
+    val tag = if (isSnapshot()) snapshotTag else releaseTag
+
+    environment {
+        properties = mapOf("artifactsDir" to layout.buildDirectory.file("distributions"))
+    }
 
     /**
      * Project configuration.
@@ -392,21 +400,26 @@ jreleaser {
         snapshot {
             // XTC uses semver versioning. The Git tags that correspond to a version are the default for
             // releases (i.e. "vx.y.z"), but snapshot tags are prefixed with snapshot/
-            label = "snapshot/v{{projectVersionMajor}}.{{projectVersionMinor}}.{{projectVersionPatch}}"
+            label = "early-access"
             fullChangelog = false
         }
+        stereotype = Stereotype.NONE
     }
 
-    // The deploy section is used to publish package artifacts to the GitHub Maven Packages.
-    //   We have the "xdk" maven artifact, the "xtc-plugin" Gradle artifact, and its Maven version (Gradle adds some extra meta info in pseudo artifact)
+    platform {
+        replacements = mapOf("osx-aarch_64" to "osx-x86_64")
+    }
+
+    // TODO Use early-access as snapshot tag.
     System.err.println("Change the snapshot tag to 'early-access' for all snapshots")
+    System.err.println("Build the XDK distribution as a JAR not a ZIP file. Tweak the extractor a bit.")
+    // https://www.baeldung.com/maven-artifact
     deploy {
-        // TODO Use early-access as snapshot tag.
         maven {
-            active = Active.ALWAYS
+            active = ALWAYS
             github {
                 val xdk by registering {
-                    active = Active.ALWAYS
+                    active = ALWAYS
                     snapshotSupported = true
                     url = "https://maven.pkg.github.com/xtclang/xvm"
                     username = "xtclang-bot"
@@ -416,43 +429,81 @@ jreleaser {
                     applyMavenCentralRules = false
                 }
             }
+            /*
+            https://jreleaser.org/guide/latest/examples/maven/maven-central.html
+            nexus2 {
+                val `maven-central` by registering {
+                    active = ALWAYS
+                    url = "https://s01.oss.sonatype.org/service/local"
+                    snapshotUrl = "https://s01.oss.sonatype.org/content/repositories/snapshots/"
+                    closeRepository = true
+                    releaseRepository = false
+                    stagingRepository(localStagingRepoDirectory.get().asFile.absolutePath)
+                    applyMavenCentralRules = true
+                }
+            }*/
+        }
+    }
+
+    // No uploaders. They are used to uopload assets eleswhere than GH releses such as AWS.
+    upload {
+        active = Active.NEVER
+    }
+
+    // xdk-0.4.4-SNAPSHOT-osx-x86_64.tar.gz  xdk-0.4.4-SNAPSHOT-osx-x86_64.zip     xdk-0.4.4-SNAPSHOT.tar.gz             xdk-0.4.4-SNAPSHOT.zip
+    // Just set the classpath to the inner jars.
+    distributions {
+        val xdk by registering {
+            distributionType = BINARY
+            stereotype = Stereotype.CLI
+            active = ALWAYS
+            artifacts {
+                artifact {
+                    path = layout.buildDirectory.file("distributions/xdk-$version.zip")
+                    extraProperties = mapOf(
+                        "universal" to true,
+                        "graalVMNativeImage" to false
+                    )
+                }
+                artifact {
+                    path = layout.buildDirectory.file("distributions/xdk-$version-osx-x86_64.zip")
+                    platform = "osx-x86_64"
+                    extraProperties = mapOf("graalVMNativeImage" to false)
+                }
+                artifact {
+                    path = layout.buildDirectory.file("distributions/xdk-$version-linux-x86_64.zip")
+                    platform = "linux-x86_64"
+                    extraProperties = mapOf("graalVMNativeImage" to false)
+                }
+                artifact {
+                    path = layout.buildDirectory.file("distribution/xdk-$version-windows-x86_64.zip")
+                    platform = "windows-x86_64"
+                    extraProperties = mapOf("graalVMNativeImage" to false)
+                }
+            }
+        }
+    }
+
+    release {
+        // TODO prerelease
+        github {
+            // TODO: Make it possible to override draft releases, but it's mostly going to be a manual process to un-draft them.
+            draft = true
+            tagName = tag
+            overwrite = true
+            changelog {
+                formatted = ALWAYS
+                preset = "conventional-commits"
+                contributors {
+                    format = "- {{contributorName}}{{#contributorUsernameAsLink}} ({{.}}){{/contributorUsernameAsLink}}"
+                }
+                contentTemplate = compositeRootProjectDirectory.file("gradle/jreleaser/changelog.tpl")
+            }
         }
     }
 }
 
-/*
 
-            // TODO: Enable
-            // https://jreleaser.org/guide/latest/reference/deploy/maven/maven-central.html
-            //mavenCentral {
-            //    enabled = false
-            //}
-
-            // https://jreleaser.org/guide/latest/reference/deploy/maven/github.html
-/*            github {
-                val xdk by registering {
-                    // TODO: There has to be a way to publish snapshots.
-                    active = Active.ALWAYS
-                    //prerelease = true
-                    //overwrite = false
-                    url = "https://maven.pkg.github.com/xtclang/xvm"
-                    username = "xtclang-bot"
-                    password = System.getenv("GITHUB_TOKEN")
-                    authorization = Authorization.BEARER
-
-                    // TODO there needs to be a staging repository that takes a provider or we have to build lots of stuff during config
-                    //stagingRepository("localStagingRepoDirectory.get().asFile.absolutePath)
-                    // The defaults for the below config is already false/disabled, unless applyMavenCentralRules are in place.
-                    sign = false
-                    sourceJar = false
-                    javadocJar = false
-                    verifyPom = false
-                    applyMavenCentralRules = false
-                }
-            }
-        }
-    }*/
- */
 /*
      // E.g. v0.4.5 of the XDK, placed on GitHub as a Release, possibly.
     release {
@@ -485,7 +536,6 @@ jreleaser {
     /*
     # These are binaries created using jpackages.
     jreleaser-installer:
-    type: NATIVE_PACKAGE
     winget:
     active: RELEASE
     continueOnError: true
@@ -543,32 +593,6 @@ jreleaser {
         }
     }
 
-    /*
-    platform:
-    replacements:
-    aarch_64: aarch64
-*/
-    // The extra properties section under project (and other places) allows you to define template values
-    // For example
-    // also see https://jreleaser.org/guide/latest/reference/name-templates.html
-    /*
-    project.extraProperties {
-        someMajorVersion: 0  -> I can use as a template {{projectSomeMajorVersion}}
-    }
-     */
-
-    /*platform {
-        // Verify that windows and linux builds actually have the correct from name pattern.
-        // The to pattern is the mandated JReleaser platform description and MUST be exactly
-        // those strings.
-        replacements {
-            "macos_aarch64" to "osx-x86_64"
-            "macos_x86_64" to "osx-x86_64"
-            "linux_x86_64" to "linux-x86_64"
-            "win_amd64" to "windows-x86_64"
-        }
-    }*/
-
     // This filters out everything that is not my current platform.
     // ./gradlew xdk:jreleaserConf --select-current-platform
     //gradlew xdk:jreleaserConf --select-platform=osx-x86_64
@@ -577,33 +601,6 @@ jreleaser {
 
     // Assemble step is not necessary, because I already have a distribution (and platform specific versions for win, linux, mac with binary launchers added)
 
-    distributions {
-        // TODO - plugin?
-        val xdk by creating {
-        //create("xdk") {
-            distributionType = DistributionType.BINARY
-            // This is the full all-platforms release config. It needs the pd independent archive as an artifact
-            // and all three specific ones.
-            // This means we know that we can only build any given platform, but we still have to list the artifacts for all platforms.
-            artifacts {<
-                // In each of these, the platformZip path only exists for the current platform running ./gradlew jreleaser
-                // Github workflows will run for all three platforms, but that doesn't work locally.
-                artifact {
-                    // ANy artifactblock has a transform property for renaming as well. It's a string, not a path.
-                    // transform = "xdk/xdk-{{projectEffectiveVersion}}-osx-x86_64.zip"
-                    path = platformZip // really the mandated mac name, has to end with mac-aarch.zip something
-                    platform = "osx-x86_64"
-                }
-                /*
-                artifact {
-                    path = platformZip // really the mandated mac name, has to end with mac-aarch.zip something
-                    platform = "linux-x86_64"  // These platforms have to be exactly these. This is the only valid platform description
-                }
-                artifact {
-                    path = platformZip // really the mandated mac name, has to end with mac-aarch.zip something
-                    platform = "windows-x86_64"
-                }*/
-            }
             /*
             jreleaser-native:
             artifacts:

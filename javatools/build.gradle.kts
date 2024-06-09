@@ -8,6 +8,8 @@ import org.gradle.language.base.plugins.LifecycleBasePlugin.VERIFICATION_GROUP
 plugins {
     alias(libs.plugins.xdk.build.java)
     alias(libs.plugins.tasktree)
+    // https://graalvm.github.io/native-build-tools/latest/gradle-plugin.html#configuration-toolchains-enabling
+    alias(libs.plugins.native.build)
 }
 
 private val semanticVersion: SemanticVersion by extra
@@ -133,6 +135,8 @@ val sanityCheckJar by tasks.registering {
         """.trimIndent()
 
     dependsOn(jar)
+
+    System.err.println("Please remove xdk properties and just use the gradle/env compatible mechanism from the start. The only thing needed to be compatible is the eveluation order of properties files and overwrites but that is 3 lines of code.")
 
     val checkJar = getXdkPropertyBoolean("org.xtclang.javatools.sanityCheckJar")
     val expectedEntryCount = getXdkPropertyInt("org.xtclang.javatools.verifyJar.expectedFileCount", -1)
