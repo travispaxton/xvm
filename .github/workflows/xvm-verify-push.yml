@@ -68,6 +68,7 @@ concurrency:
 
 jobs:
   discord-message:
+    if: ${{ false }}
     runs-on: ubuntu-latest
     steps:
     - name: Send Discord Message; New Build
