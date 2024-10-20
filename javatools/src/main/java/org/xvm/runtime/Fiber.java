@@ -3,6 +3,7 @@ package org.xvm.runtime;
 
 import java.lang.ref.WeakReference;
 
+import java.security.Provider;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -48,6 +49,7 @@ public class Fiber
         f_suspendCnd = context.f_fiberExeuctionLock.newCondition();
         f_iCallerId = msgCall.f_iCallerId;
         f_fnCaller = msgCall.f_fnCaller;
+        f_sEntryPointName = msgCall.toString();
         m_status = FiberStatus.Initial;
 
         Fiber fiberCaller = msgCall.f_fiberCaller;
@@ -560,10 +562,18 @@ public class Fiber
      */
     public void suspend()
         {
+        Thread thread = Thread.currentThread();
+        String sRestore = thread.getName();
+        thread.setName(f_context.f_sName + ":" + this + " " + m_frame);
+
         while (!m_fScheduled)
             {
-            f_suspendCnd.awaitUninterruptibly(); // this is totally workabl
+            // TODO: make it safe to pass false; for that we need to respect fiber timeouts
+            f_context.ensureScheduled(true);
+            f_suspendCnd.awaitUninterruptibly();
             }
+
+        thread.setName(sRestore);
         }
 
     /**
@@ -587,6 +597,8 @@ public class Fiber
     @Override
     public void run()
         {
+        Thread.currentThread().setName(f_context.f_sName + ":" + this);
+        f_context.adoptCallingFiber();
         f_context.f_fiberExeuctionLock.lock();
         Frame frame = m_frame;
         try (var ignored = ConstantPool.withPool(frame.poolContext()))
@@ -612,8 +624,14 @@ public class Fiber
             }
         finally
             {
-            f_context.execute(true);
-            f_context.f_fiberExeuctionLock.unlock();
+            try
+                {
+                f_context.execute(true);
+                }
+            finally
+                {
+                f_context.releaseSchedulingLock();
+                }
             }
         }
 
@@ -641,7 +659,7 @@ public class Fiber
     @Override
     public String toString()
         {
-        return "Fiber " + f_lId + " (" + m_status.name() + ')';
+        return "Fiber " + f_lId + " " + f_sEntryPointName + " (" + m_status.name() + ')';
         }
 
 
@@ -726,6 +744,11 @@ public class Fiber
      * The function of the caller's service invocation Op (used for stack trace only).
      */
     final MethodStructure f_fnCaller;
+
+    /**
+     * The name of the base function called on the service
+     */
+    final String f_sEntryPointName;
 
     /**
      * The fiber call stack depth.

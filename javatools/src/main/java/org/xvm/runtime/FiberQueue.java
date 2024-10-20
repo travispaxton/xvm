@@ -256,9 +256,9 @@ public class FiberQueue
      */
     private boolean isAnyNonConcurrentWaiting(Fiber fiberCandidate)
         {
-        Frame[] aFrame      = m_aFrame;
-        int     cFrames     = aFrame.length;
-        Fiber   fiberCaller = fiberCandidate.getCaller();
+        Frame[] aFrame = m_aFrame;
+        int cFrames = aFrame.length;
+        Fiber fiberCaller = fiberCandidate.getCaller();
 
         for (int i = 0; i < cFrames; i++)
             {
@@ -274,7 +274,7 @@ public class FiberQueue
                 if (fiber.getStatus() == FiberStatus.Waiting)
                     {
                     if (frame.isSafeStack() ||
-                        fiberCaller != null && fiberCaller.isContinuationOf(fiber))
+                            fiberCaller != null && fiberCaller.isContinuationOf(fiber))
                         {
                         continue;
                         }

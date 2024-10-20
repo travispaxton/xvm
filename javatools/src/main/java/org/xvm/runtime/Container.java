@@ -160,6 +160,7 @@ public abstract class Container
         //       f_pendingWorkCount
         service.f_executor.submit(() ->
             {
+            Thread.currentThread().setName(service.f_sName + ":scheduler");
             try
                 {
                 service.execute(true);

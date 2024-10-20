@@ -1,6 +1,7 @@
 package org.xvm.runtime.template._native.temporal;
 
 
+import java.time.Duration;
 import java.util.TimerTask;
 
 import org.xvm.asm.ClassStructure;
@@ -236,14 +237,16 @@ public class xNanosTimer
             // note: the Java Timer uses millisecond scheduling, but we're given scheduling
             // instructions in picoseconds
             LongLongHandle llPicos = (LongLongHandle) hDuration.getField(null, "picoseconds");
-            long           cNanos  = Math.max(0, llPicos.getValue().divUnsigned(PICOS_PER_NANO).getLowValue());
-            Alarm          alarm   = new Alarm(cNanos, refAlarm);
+            long cNanos = Math.max(0, llPicos.getValue().divUnsigned(PICOS_PER_NANO).getLowValue());
+            Alarm alarm = new Alarm(cNanos, refAlarm);
+
+            System.err.println(Thread.currentThread().getId() + " alarm scheduled " + Duration.ofNanos(cNanos)); // TODO: REMOVE
 
             return new NativeFunctionHandle((_frame, _ah, _iReturn) ->
-                {
-                alarm.cancel();
-                return Op.R_NEXT;
-                });
+            {
+            alarm.cancel();
+            return Op.R_NEXT;
+            });
             }
 
         /**

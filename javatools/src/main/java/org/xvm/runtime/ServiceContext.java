@@ -19,7 +19,6 @@ import java.util.concurrent.*;
 
 import java.util.concurrent.atomic.AtomicLong;
 
-import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Supplier;
 
@@ -73,6 +72,27 @@ import org.xvm.util.concurrent.VarHandles;
  */
 public class ServiceContext
     {
+    static // TODO: REMOVE
+        {
+        new Thread(() -> {
+        while (true)
+            {
+            try
+                {
+                Thread.sleep(1000);
+                }
+            catch (Exception e)
+                {
+                }
+            }
+        }).start();
+        }
+
+    /**
+     * If {@code true} XTC fibers will be mapped to Java platform threads; this is expensive but allows for easier
+     * debugging.
+     */
+    public static final boolean USE_PLATFORM_THREADS = Boolean.getBoolean("xtc.usePlatformThreads");
 
     ServiceContext(Container container, String sName, long lId)
         {
@@ -81,9 +101,10 @@ public class ServiceContext
         f_pool = container.getConstantPool();
         f_sName = sName == null ? sModuleName : sName;
         f_lId = lId;
-        f_executor = Executors.newThreadPerTaskExecutor(Thread.ofPlatform().name( // TODO: virtual
-                        sModuleName + ":" + (sName == null ? "" : (sName + ":")), 0)
-                .factory());
+        f_executor = Executors.newThreadPerTaskExecutor(
+                (USE_PLATFORM_THREADS ? Thread.ofPlatform() : Thread.ofVirtual())
+                        .name(sModuleName + ":" + (sName == null ? "" : (sName + ":")), 0)
+                        .factory());
         }
 
 
@@ -203,7 +224,15 @@ public class ServiceContext
      */
     public static ServiceContext getCurrentContext()
         {
-        return s_tloContext.get()[0];
+        return s_tloContext.get();
+        }
+
+    /**
+     * Called by a fiber to indicate that it is part of this service context
+     */
+    public void adoptCallingFiber()
+        {
+        s_tloContext.set(this);
         }
 
     /**
@@ -349,40 +378,17 @@ public class ServiceContext
      */
     protected void drainWork()
         {
-        ServiceContext[] tloCtx = s_tloContext.get();
-        ServiceContext ctxPrior = tloCtx[0];
-        tloCtx[0] = this;
+        Frame frame = nextFiber();
 
-        try
+        // TODO MF: seems we should schedule all ready fibers but this causes issue???
+        if (frame != null)
             {
-            // responses have the highest priority and no natural code runs there;
-            // process all we've got so far
-            processResponses();
-
-            // pickup all the messages, but keep them in the "initial" state
-            Message message;
-            while ((message = f_queueMsg.poll()) != null)
-                {
-                f_queueSuspended.add(message.createFrame(this));
-                }
-
-            Frame frame;
-            while ((frame = nextFiber()) != null)
-                {
-                frame.f_fiber.schedule();
-                }
+            frame.f_fiber.schedule();
             }
-        finally
-            {
-            tloCtx[0] = ctxPrior;
 
-            if (ctxPrior != null)
-                {
-                // now that we've switched back to the caller's service context process any responses
-                // which may have arrived
-                ctxPrior.processResponses();
-                }
-            }
+        // TODO MF: we historically process responses here, but that had assumed that executing another fiber was
+        //  synchronous does this matter anymore?
+        //getCurrentContext().processResponses();
         }
 
     /**
@@ -394,7 +400,14 @@ public class ServiceContext
         {
         if (tryAcquireSchedulingLock())
             {
-            execute(!fAsync);
+            try
+                {
+                execute(!fAsync);
+                }
+            finally
+                {
+                releaseSchedulingLock();
+                }
             }
         // else; already scheduled
         }
@@ -409,15 +422,10 @@ public class ServiceContext
             {
             if (fAllowInlineExecution)
                 {
-                System.err.println("***");
                 drainWork();
                 if (getStatus() == ServiceStatus.Terminated)
                     {
                     f_container.terminate(this);
-                    }
-                else
-                    {
-                    releaseSchedulingLock();
                     }
                 }
             else
@@ -428,7 +436,6 @@ public class ServiceContext
         finally
             {
             releaseSchedulingLock();
-            f_fiberExeuctionLock.unlock();
             }
         }
 
@@ -451,6 +458,12 @@ public class ServiceContext
      */
     protected void releaseSchedulingLock()
         {
+        if (f_fiberExeuctionLock.getHoldCount() > 1)
+            {
+            f_fiberExeuctionLock.unlock();
+            return;
+            }
+
         // If isContended is true then the service requires more processing, so we can immediately
         // reschedule, thus transferring our lock ownership. Between checking that state and releasing
         // the lock isContended could transition to true and the thread doing that transition would
@@ -462,11 +475,13 @@ public class ServiceContext
         // doesn't represent new work then the scheduled task will be a no-op and just come back here
         // to release again, and is thus safe.
 
-        long cLockPreState = m_cLockScheduling; // read lock state prior to isContended check
-        if (isContended() || !SCHEDULING_LOCK_COUNT.compareAndSet(this, cLockPreState, 0L))
+        long cLockPreState = m_cLockScheduling;
+        if (isContended())
             {
+            f_fiberExeuctionLock.unlock();
             // we've detected service or lock contention, reschedule
             f_container.schedule(this);
+            return;
             }
         else if (!f_setFibers.isEmpty())
             {
@@ -486,14 +501,21 @@ public class ServiceContext
                 f_wakeUpScheduler.schedule(ldtTimeout);
                 }
             }
+
+        f_fiberExeuctionLock.unlock();
+        if (m_cLockScheduling != cLockPreState && tryAcquireSchedulingLock())
+            {
+            // we detected scheduling contention during unlock, continue asynchronously
+            f_fiberExeuctionLock.unlock();
+            f_container.schedule(this);
+            }
         }
 
     /**
      * Add a message to the service request queue.
      *
-     * @param msg     the request message
-     * @param fAsync  if true, avoid the in-line optimization for the request execution
-     *
+     * @param msg    the request message
+     * @param fAsync if true, avoid the in-line optimization for the request execution
      * @return true if the service has become "overwhelmed" - too many outstanding messages
      */
     public boolean addRequest(Message msg, boolean fAsync)
@@ -525,9 +547,13 @@ public class ServiceContext
      */
     private void processResponses()
         {
-        Response response;
+        Response<?> response;
         while ((response = f_queueResponse.poll()) != null)
             {
+            if (f_sName.equals("TestService"))
+                {
+                System.out.println(Thread.currentThread().getId() + " run response: " + response);
+                }
             response.run();
             }
         }
@@ -540,6 +566,17 @@ public class ServiceContext
      */
     private Frame nextFiber()
         {
+        // responses have the highest priority and no natural code runs there;
+        // process all we've got so far
+        processResponses();
+
+        // pickup all the messages, but keep them in the "initial" state
+        Message message;
+        while ((message = f_queueMsg.poll()) != null)
+            {
+            f_queueSuspended.add(message.createFrame(this));
+            }
+
         // allow initial timeouts to be processed always, since they won't run any natural code
         // TODO: return ?f_queueSuspended.getInitialTimeout();
 
@@ -2215,22 +2252,22 @@ public class ServiceContext
         protected void schedule(long ldtWakeUp)
             {
             long ldtNow = System.currentTimeMillis();
-            if (f_ldtScheduled > 0)
+            if (m_ldtScheduled > 0)
                 {
-                if (ldtNow <= f_ldtScheduled && f_ldtScheduled <= ldtWakeUp)
+                if (ldtNow <= m_ldtScheduled && m_ldtScheduled <= ldtWakeUp)
                     {
                     // the current wake up covers the new one; nothing to do
                     return;
                     }
 
-                if (ldtNow < f_ldtScheduled)
+                if (ldtNow < m_ldtScheduled)
                     {
                     m_taskCurrent.cancel();
                     }
                 }
 
-            f_ldtScheduled = ldtWakeUp;
-            m_taskCurrent  = new TimerTask()
+            m_ldtScheduled = ldtWakeUp;
+            m_taskCurrent = new TimerTask()
                 {
                 public void run()
                     {
@@ -2241,7 +2278,7 @@ public class ServiceContext
             xLocalClock.TIMER.schedule(m_taskCurrent, Math.max(1, ldtWakeUp - ldtNow));
             }
 
-        private long      f_ldtScheduled; // when
+        private long m_ldtScheduled; // when
         private TimerTask m_taskCurrent;  // what
         }
 
@@ -2326,7 +2363,7 @@ public class ServiceContext
     /**
      * Lock managing fiber execution within {@link #f_executor}.
      */
-    final Lock f_fiberExeuctionLock = new ReentrantLock();
+    final ReentrantLock f_fiberExeuctionLock = new ReentrantLock();
 
     /**
      * The set of active fibers. It can be [read] accessed by outside threads.
@@ -2374,7 +2411,7 @@ public class ServiceContext
     /**
      * The context served by the current thread.
      */
-    static final ThreadLocal<ServiceContext[]> s_tloContext = ThreadLocal.withInitial(() -> new ServiceContext[1]);
+    static final ThreadLocal<ServiceContext> s_tloContext = new ThreadLocal<>();
 
     /**
      * VarHandle for {@link #m_cLockScheduling}.
